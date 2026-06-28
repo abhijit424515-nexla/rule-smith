@@ -26,5 +26,13 @@ fixtures/    # pos/neg test cases per rule
 ## Dev
 ```
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
-.venv/bin/python -m rulesmith.cfg   # primitive self-check
+.venv/bin/python -m rulesmith.cfg              # primitive self-check
+.venv/bin/python tests/test_resource_leak.py   # rule fixtures
+.venv/bin/python tests/test_autofix.py         # autofix
+
+# CLI
+.venv/bin/python -m rulesmith.cli list
+.venv/bin/python -m rulesmith.cli lint <path>            # exit 1 on findings
+.venv/bin/python -m rulesmith.cli lint --fix <path>      # try-with-resources rewrite
+.venv/bin/python -m rulesmith.cli lint --fix --dry-run <path>
 ```

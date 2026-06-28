@@ -130,3 +130,61 @@ def analyze_source(src, file="<src>"):
     for m in find(tree.root_node, "method_declaration", "constructor_declaration"):
         out += analyze_method(m, src_b, file)
     return out
+
+
+# ---- autofix (Phase 3) --------------------------------------------------
+# Safe subset only: a single "never closed" resource declared directly in a
+# block. Wrapping the rest of the block in try-with-resources is correct even
+# with returns/throws, since try-with-resources closes on ANY exit. The
+# not-closed-on-all-paths variant (an explicit close() exists) and multi-
+# resource blocks are left as suggestions.
+from collections import defaultdict
+
+
+def fix_edits(src, file="<src>"):
+    tree, src_b = parse(src)
+    edits = []
+    skipped = 0
+    for m in find(tree.root_node, "method_declaration", "constructor_declaration"):
+        safe = _twr_resource_names(m)
+        per_block = defaultdict(list)
+        for lvd in find(m, "local_variable_declaration"):
+            ty = lvd.child_by_field_name("type")
+            if ty is None or not _is_closeable(node_text(ty, src_b)):
+                continue
+            for decl in find(lvd, "variable_declarator"):
+                nm = decl.child_by_field_name("name")
+                val = decl.child_by_field_name("value")
+                if nm is None or val is None:
+                    continue
+                var = node_text(nm, src_b)
+                if var in safe or escapes(m, var):
+                    continue
+                if _close_calls(m, var):
+                    skipped += 1            # not-closed-on-all-paths: suggest only
+                    continue
+                if lvd.parent is None or lvd.parent.type != "block":
+                    skipped += 1            # not directly in a block: skip
+                    continue
+                per_block[id(lvd.parent)].append((lvd, var))
+        for items in per_block.values():
+            if len(items) != 1:
+                skipped += len(items)        # multi-resource block: manual
+                continue
+            lvd, var = items[0]
+            block = lvd.parent
+            core = node_text(lvd, src_b).rstrip()
+            if core.endswith(";"):
+                core = core[:-1].rstrip()
+            edits.append(dict(start=lvd.start_byte, end=lvd.end_byte,
+                              repl=f"try ({core}) {{", reason=f"wrap {var}"))
+            close_pos = block.end_byte - 1   # index of the block's '}'
+            edits.append(dict(start=close_pos, end=close_pos, repl="\n}", reason=""))
+    return edits, skipped
+
+
+def apply_edits(src, edits):
+    b = src.encode("utf8")
+    for e in sorted(edits, key=lambda x: x["start"], reverse=True):
+        b = b[:e["start"]] + e["repl"].encode("utf8") + b[e["end"]:]
+    return b.decode("utf8")
