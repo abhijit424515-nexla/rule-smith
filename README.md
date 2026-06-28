@@ -77,7 +77,9 @@ tests/           primitive + rule + autofix self-checks
 - [x] **P3** CLI + try-with-resources autofix (safe subset only)
 - [x] **P4** authoring loop — English rule -> verified -> installed
 - [x] **P5** judgment layer (filter false positives, cached) + optional-get rule
-- [ ] curate the 184-rule catalog into shipped defaults; CI gate; Scala
+- [x] **P6** CI gate (`--rules` selector + GitHub Action template) + DEMO.md
+- [x] **P7** seed catalog rules via authoring loop (6 rules installed)
+- [ ] stretch: curate full 184-catalog, per-rule doc pages, typestate, Scala 2.12
 
 ## Dev
 ```
