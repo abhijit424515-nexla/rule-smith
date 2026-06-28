@@ -1,38 +1,103 @@
 # RuleSmith
 
-NL coding rules -> tested, AST-backed deterministic checks. Neuro-symbolic linter:
-deterministic primitives (CFG, dominance) compute the expensive-to-be-wrong facts;
-Claude adjudicates only the fuzzy residual. Every finding cites its evidence.
+Turn plain-English coding rules into tested, AST-backed, deterministic checks —
+runnable from one CLI. A neuro-symbolic linter: deterministic primitives (CFG,
+dominance, escape analysis) compute the expensive-to-be-wrong facts; Claude
+adjudicates only the fuzzy residual. Every finding cites its evidence and many
+ship with a fix.
 
-Design docs + 184-rule catalog: see the agentathon vault notes.
+Design docs + the 184-rule catalog live in the agentathon vault notes.
+
+## Status: demoable checkpoint (Phases 0–4 complete)
+
+The full loop works end-to-end with **no API key** — codegen runs through the
+Claude Code CLI (`claude -p`) using your own session.
+
+```
+# author a brand-new rule in English -> codegen -> fixtures gate -> install
+rulesmith add "compare strings with .equals(), never with =="
+  [ok] violation.java: 1   [ok] clean.java: 0   ...   installed (all green)
+
+# lint real code -> rust-style diagnostic with deterministic evidence
+rulesmith lint path/to/src
+  warning[resource-leak]: `in` (InputStream) is never closed
+    --> Foo.java:4:5
+     = note: no close() call found and the resource does not escape the method
+     = help: use try-with-resources: try (InputStream in = ...) { ... }
+
+# auto-fix the safe subset
+rulesmith lint --fix path/to/src
+```
+
+Proven on the real backend-connectors repo: **1242 files, 0 parse errors, 78
+resource-leak findings**, including a confirmed `FileInputStream` leak in
+`OneDriveConnectorService`.
 
 ## Decisions (locked)
 - Name: RuleSmith
 - Flagship rule: resource-leak
-- Engine: raw tree-sitter (py bindings) -- need full AST for CFG
-- Spec format: python DSL (rule = function -> findings)
+- Engine: raw tree-sitter (py bindings) — full AST needed for CFG
+- Spec format: python DSL (a rule = a function returning findings)
 - MVP language: Java
-- LLM: Claude API, claude-opus-4-8 (codegen + judge), wired later
+- LLM backend: **Claude Code CLI (`claude -p`, headless, no key)** — supported
+  interface, uses the user's own authenticated session
+
+## Architecture
+
+Two rule families, six layers:
+- **Detective** rules (find bugs) ride CFG + dominance + Claude judgment.
+- **Prescriptive** rules (conventions) are AST match + codemod, no CFG.
+
+```
+parse  ->  primitives  ->  rules  ->  judgment  ->  report/fix
+                                         (Claude, only for hybrid rules)
+                 ^
+            authoring (NL -> rule, via claude -p)
+```
 
 ## Layout
 ```
 rulesmith/
-  parse.py   # Phase 0: parse + ast query/find, spans, node text
-  cfg.py     # Phase 1: intraprocedural CFG + dominance / post-dominance
-rules/       # rule specs (python) -- next
-fixtures/    # pos/neg test cases per rule
+  parse.py       Phase 0  parse + AST find/query, spans, node text
+  cfg.py         Phase 1  intraprocedural CFG + dominance / post-dominance
+  dataflow.py    Phase 2  escape analysis + def-use helpers
+  report.py      Phase 3  rust-style diagnostics (span + evidence + help + link)
+  cli.py         Phase 3  lint / lint --fix / list / add ; dynamic rule discovery
+  llm.py         Phase 4  Claude Code CLI backend (claude -p)
+  authoring.py   Phase 4  NL rule -> codegen -> fixture gate -> install
+rules/           installed rule modules (resource_leak, string_equality_check, ...)
+fixtures/        pos/neg test cases per rule (the trust mechanism)
+tests/           primitive + rule + autofix self-checks
 ```
+
+## Phase log
+- [x] **P0** tree-sitter Java parsing + AST query
+- [x] **P1** CFG + dominance / post-dominance (self-check 3/3)
+- [x] **P2** resource-leak rule end-to-end (5/5 fixtures; real bug found)
+- [x] **P3** CLI + try-with-resources autofix (safe subset only)
+- [x] **P4** authoring loop — English rule -> verified -> installed
+- [ ] **P5** judgment layer (filter false positives) + 2nd hard rule
+- [ ] curate the 184-rule catalog into shipped defaults; CI gate; Scala
 
 ## Dev
 ```
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
-.venv/bin/python -m rulesmith.cfg              # primitive self-check
+
+# self-checks
+.venv/bin/python -m rulesmith.cfg              # primitive dominance self-check
 .venv/bin/python tests/test_resource_leak.py   # rule fixtures
 .venv/bin/python tests/test_autofix.py         # autofix
 
 # CLI
 .venv/bin/python -m rulesmith.cli list
-.venv/bin/python -m rulesmith.cli lint <path>            # exit 1 on findings
-.venv/bin/python -m rulesmith.cli lint --fix <path>      # try-with-resources rewrite
-.venv/bin/python -m rulesmith.cli lint --fix --dry-run <path>
+.venv/bin/python -m rulesmith.cli lint <path>                 # exit 1 on findings
+.venv/bin/python -m rulesmith.cli lint --fix [--dry-run] <path>
+.venv/bin/python -m rulesmith.cli add "<rule in plain English>"
 ```
+
+## Known limits (honest)
+- Resource detection is name-based (no type resolution) → false positives like
+  `OffsetStorageReader`; Phase 5 judgment layer filters these.
+- CFG exception edges are coarse (entry-level, not per-statement).
+- Autofix only wraps the provably-safe subset; the rest is suggest-only.
+- Autofix delegates formatting reflow to google-java-format.
