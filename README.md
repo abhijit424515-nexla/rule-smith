@@ -92,6 +92,8 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 .venv/bin/python -m rulesmith.cli list
 .venv/bin/python -m rulesmith.cli lint <path>                 # exit 1 on findings
 .venv/bin/python -m rulesmith.cli lint --fix [--dry-run] <path>
+.venv/bin/python -m rulesmith.cli lint --rules resource-leak,optional-get-without-ispresent <path>
+.venv/bin/python -m rulesmith.cli lint --judge <path>          # filter false positives via claude -p
 .venv/bin/python -m rulesmith.cli add "<rule in plain English>"
 ```
 

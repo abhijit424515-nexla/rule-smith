@@ -6,6 +6,7 @@ import glob
 
 import importlib.util
 from rulesmith.report import format_finding
+from rules import resource_leak
 
 _RULES_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "rules")
 
@@ -65,6 +66,8 @@ def cmd_lint(args):
             continue
         rel = os.path.relpath(f)
         if args.fix:
+            if args.rules and "resource-leak" not in args.rules:
+                continue
             edits, sk = resource_leak.fix_edits(src, rel)
             skipped += sk
             if edits:
@@ -76,7 +79,9 @@ def cmd_lint(args):
                       f"{len(edits)//2} resource(s) wrapped in try-with-resources")
         else:
             findings = []
-            for mod in RULES.values():
+            for name, mod in RULES.items():
+                if args.rules and name not in args.rules:
+                    continue
                 findings += mod.analyze_source(src, rel)
             if args.judge and findings:
                 from rulesmith import judge as judgemod
@@ -123,6 +128,7 @@ def main(argv=None):
     lp.add_argument("--fix", action="store_true", help="apply safe autofixes")
     lp.add_argument("--dry-run", action="store_true", help="with --fix: don't write")
     lp.add_argument("--judge", action="store_true", help="filter hybrid findings via claude -p (cached)")
+    lp.add_argument("--rules", type=lambda x: set(x.split(",")), default=None, help="comma-separated rule ids to run")
     lp.set_defaults(fn=cmd_lint)
     ad = sub.add_parser("add", help="compile an English rule into a checked rule")
     ad.add_argument("description", nargs="+", help="the rule in plain English")

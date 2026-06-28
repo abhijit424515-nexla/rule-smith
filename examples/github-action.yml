@@ -1,0 +1,18 @@
+# Drop into a target Java repo at .github/workflows/rulesmith.yml to gate PRs.
+name: RuleSmith
+on: [pull_request]
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Install RuleSmith
+        run: |
+          pip install tree-sitter tree-sitter-java
+          git clone https://github.com/<you>/rule-smith /opt/rulesmith
+      - name: Lint (fails the build on findings)
+        run: |
+          PYTHONPATH=/opt/rulesmith python -m rulesmith.cli lint \
+            --rules resource-leak,optional-get-without-ispresent src/main/java
