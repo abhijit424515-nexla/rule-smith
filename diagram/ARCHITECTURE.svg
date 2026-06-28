@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="640" viewBox="0 0 1320 640" font-family="Helvetica,Arial,sans-serif">
+<rect width="1320" height="640" fill="#ffffff"/>
+<defs><marker id="ah" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L8,3 L0,6 z" fill="#343a40"/></marker></defs>
+<text x="40" y="48" font-size="28" font-weight="bold" fill="#1e1e1e">RuleSmith — architecture</text>
+<text x="40" y="78" font-size="16" fill="#495057">deterministic primitives decide; Claude adjudicates only the residual</text>
+<text x="445" y="270" font-size="14" fill="#e8590c">claude -p = your own Claude Code session, no API key</text>
+<rect x="40" y="300" width="150" height="92" rx="12" fill="#c3fae8" stroke="#1e1e1e" stroke-width="2"/>
+<text x="115" y="341" font-size="16" font-family="Helvetica,Arial,sans-serif" text-anchor="middle" fill="#1e1e1e">Java</text>
+<text x="115" y="360" font-size="16" font-family="Helvetica,Arial,sans-serif" text-anchor="middle" fill="#1e1e1e">source</text>
+<rect x="230" y="300" width="175" height="92" rx="12" fill="#a5d8ff" stroke="#1e1e1e" stroke-width="2"/>
+<text x="318" y="341" font-size="16" font-family="Helvetica,Arial,sans-serif" text-anchor="middle" fill="#1e1e1e">Parse</text>
+<text x="318" y="360" font-size="16" font-family="Helvetica,Arial,sans-serif" text-anchor="middle" fill="#1e1e1e">(tree-sitter)</text>
+<rect x="445" y="300" width="200" height="92" rx="12" fill="#a5d8ff" stroke="#1e1e1e" stroke-width="2"/>
+<text x="545" y="332" font-size="16" font-family="Helvetica,Arial,sans-serif" text-anchor="middle" fill="#1e1e1e">Primitives</text>
+<text x="545" y="350" font-size="16" font-family="Helvetica,Arial,sans-serif" text-anchor="middle" fill="#1e1e1e">CFG · dominance</text>
+<text x="545" y="370" font-size="16" font-family="Helvetica,Arial,sans-serif" text-anchor="middle" fill="#1e1e1e">· escape</text>
+<rect x="685" y="300" width="175" height="92" rx="12" fill="#fff3bf" stroke="#1e1e1e" stroke-width="2"/>
+<text x="772" y="332" font-size="16" font-family="Helvetica,Arial,sans-serif" text-anchor="middle" fill="#1e1e1e">Rules</text>
+<text x="772" y="350" font-size="16" font-family="Helvetica,Arial,sans-serif" text-anchor="middle" fill="#1e1e1e">detective +</text>
+<text x="772" y="370" font-size="16" font-family="Helvetica,Arial,sans-serif" text-anchor="middle" fill="#1e1e1e">prescriptive</text>
+<rect x="900" y="300" width="175" height="92" rx="12" fill="#b2f2bb" stroke="#1e1e1e" stroke-width="2"/>
+<text x="988" y="332" font-size="16" font-family="Helvetica,Arial,sans-serif" text-anchor="middle" fill="#1e1e1e">Report</text>
+<text x="988" y="350" font-size="16" font-family="Helvetica,Arial,sans-serif" text-anchor="middle" fill="#1e1e1e">diagnostic +</text>
+<text x="988" y="370" font-size="16" font-family="Helvetica,Arial,sans-serif" text-anchor="middle" fill="#1e1e1e">evidence</text>
+<rect x="1115" y="300" width="185" height="92" rx="12" fill="#b2f2bb" stroke="#1e1e1e" stroke-width="2"/>
+<text x="1208" y="332" font-size="16" font-family="Helvetica,Arial,sans-serif" text-anchor="middle" fill="#1e1e1e">Fix / CI gate</text>
+<text x="1208" y="350" font-size="16" font-family="Helvetica,Arial,sans-serif" text-anchor="middle" fill="#1e1e1e">try-with-resources</text>
+<text x="1208" y="370" font-size="16" font-family="Helvetica,Arial,sans-serif" text-anchor="middle" fill="#1e1e1e">exit 1</text>
+<rect x="230" y="120" width="175" height="80" rx="12" fill="#d0bfff" stroke="#1e1e1e" stroke-width="2"/>
+<text x="318" y="155" font-size="16" font-family="Helvetica,Arial,sans-serif" text-anchor="middle" fill="#1e1e1e">add</text>
+<text x="318" y="174" font-size="16" font-family="Helvetica,Arial,sans-serif" text-anchor="middle" fill="#1e1e1e">"&lt;english&gt;"</text>
+<rect x="445" y="120" width="200" height="80" rx="12" fill="#d0bfff" stroke="#1e1e1e" stroke-width="2"/>
+<text x="545" y="155" font-size="16" font-family="Helvetica,Arial,sans-serif" text-anchor="middle" fill="#1e1e1e">claude -p</text>
+<text x="545" y="174" font-size="16" font-family="Helvetica,Arial,sans-serif" text-anchor="middle" fill="#1e1e1e">codegen</text>
+<rect x="685" y="120" width="175" height="80" rx="12" fill="#d0bfff" stroke="#1e1e1e" stroke-width="2"/>
+<text x="772" y="155" font-size="16" font-family="Helvetica,Arial,sans-serif" text-anchor="middle" fill="#1e1e1e">fixture gate</text>
+<text x="772" y="174" font-size="16" font-family="Helvetica,Arial,sans-serif" text-anchor="middle" fill="#1e1e1e">(verify)</text>
+<rect x="685" y="505" width="200" height="92" rx="12" fill="#ffd8a8" stroke="#1e1e1e" stroke-width="2"/>
+<text x="785" y="536" font-size="16" font-family="Helvetica,Arial,sans-serif" text-anchor="middle" fill="#1e1e1e">Judgment</text>
+<text x="785" y="556" font-size="16" font-family="Helvetica,Arial,sans-serif" text-anchor="middle" fill="#1e1e1e">claude -p · cached</text>
+<text x="785" y="574" font-size="16" font-family="Helvetica,Arial,sans-serif" text-anchor="middle" fill="#1e1e1e">filters false positives</text>
+<line x1="190" y1="346" x2="230" y2="346" stroke="#343a40" stroke-width="2" marker-end="url(#ah)"/>
+<line x1="405" y1="346" x2="445" y2="346" stroke="#343a40" stroke-width="2" marker-end="url(#ah)"/>
+<line x1="645" y1="346" x2="685" y2="346" stroke="#343a40" stroke-width="2" marker-end="url(#ah)"/>
+<line x1="860" y1="346" x2="900" y2="346" stroke="#343a40" stroke-width="2" marker-end="url(#ah)"/>
+<line x1="1075" y1="346" x2="1115" y2="346" stroke="#343a40" stroke-width="2" marker-end="url(#ah)"/>
+<line x1="405" y1="160" x2="445" y2="160" stroke="#343a40" stroke-width="2" marker-end="url(#ah)"/>
+<line x1="645" y1="160" x2="685" y2="160" stroke="#343a40" stroke-width="2" marker-end="url(#ah)"/>
+<line x1="775" y1="200" x2="775" y2="300" stroke="#343a40" stroke-width="2" marker-end="url(#ah)"/>
+<rect x="749" y="239" width="52" height="18" fill="#ffffff" opacity="0.9"/>
+<text x="775" y="253" font-size="13" text-anchor="middle" fill="#343a40">install</text>
+<line x1="740" y1="392" x2="740" y2="505" stroke="#343a40" stroke-width="2" marker-end="url(#ah)"/>
+<rect x="714" y="438" width="52" height="18" fill="#ffffff" opacity="0.9"/>
+<text x="740" y="452" font-size="13" text-anchor="middle" fill="#343a40">hybrid</text>
+<line x1="885" y1="551" x2="988" y2="392" stroke="#343a40" stroke-width="2" marker-end="url(#ah)"/>
+<rect x="910" y="460" width="52" height="18" fill="#ffffff" opacity="0.9"/>
+<text x="936" y="474" font-size="13" text-anchor="middle" fill="#343a40">kept</text>
+</svg>

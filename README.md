@@ -48,12 +48,10 @@ Two rule families, six layers:
 - **Detective** rules (find bugs) ride CFG + dominance + Claude judgment.
 - **Prescriptive** rules (conventions) are AST match + codemod, no CFG.
 
-```
-parse  ->  primitives  ->  rules  ->  judgment  ->  report/fix
-                                         (Claude, only for hybrid rules)
-                 ^
-            authoring (NL -> rule, via claude -p)
-```
+![RuleSmith architecture](diagram/ARCHITECTURE.svg)
+
+Editable source: `diagram/ARCHITECTURE.excalidraw` (drag onto excalidraw.com);
+regenerate both with `python diagram/build_arch.py`.
 
 ## Layout
 ```
