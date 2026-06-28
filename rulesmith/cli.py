@@ -50,6 +50,11 @@ def cmd_list(_args):
 
 def cmd_lint(args):
     files = _java_files(args.paths)
+    _cache = {}
+    filtered = []
+    if getattr(args, "judge", False):
+        from rulesmith import judge as judgemod
+        _cache = judgemod.load_cache()
     total = 0
     fixed = 0
     skipped = 0
@@ -73,6 +78,21 @@ def cmd_lint(args):
             findings = []
             for mod in RULES.values():
                 findings += mod.analyze_source(src, rel)
+            if args.judge and findings:
+                from rulesmith import judge as judgemod
+                kept = []
+                for fd in findings:
+                    if not fd.get("judge"):
+                        kept.append(fd)
+                        continue
+                    snip = judgemod.snippet_for(src, fd["line"])
+                    v = judgemod.judge(fd, snip, _cache)
+                    if v["real"]:
+                        fd["note"] = fd.get("note", "") + f" | judge: real ({v['reason']})"
+                        kept.append(fd)
+                    else:
+                        filtered.append((rel, fd, v["reason"]))
+                findings = kept
             total += len(findings)
             for fd in findings:
                 print(format_finding(fd))
@@ -80,6 +100,10 @@ def cmd_lint(args):
     if args.fix:
         print(f"\n{fixed} auto-fixed, {skipped} need manual handling (suggest-only).")
         return 0
+    if args.judge:
+        from rulesmith import judge as judgemod
+        judgemod.save_cache(_cache)
+        print(f"{len(filtered)} finding(s) filtered as false positives by the judge.")
     print(f"{total} finding(s) across {len(files)} file(s).")
     return 1 if total else 0
 
@@ -98,6 +122,7 @@ def main(argv=None):
     lp.add_argument("paths", nargs="+")
     lp.add_argument("--fix", action="store_true", help="apply safe autofixes")
     lp.add_argument("--dry-run", action="store_true", help="with --fix: don't write")
+    lp.add_argument("--judge", action="store_true", help="filter hybrid findings via claude -p (cached)")
     lp.set_defaults(fn=cmd_lint)
     ad = sub.add_parser("add", help="compile an English rule into a checked rule")
     ad.add_argument("description", nargs="+", help="the rule in plain English")

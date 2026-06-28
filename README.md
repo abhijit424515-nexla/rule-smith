@@ -76,7 +76,7 @@ tests/           primitive + rule + autofix self-checks
 - [x] **P2** resource-leak rule end-to-end (5/5 fixtures; real bug found)
 - [x] **P3** CLI + try-with-resources autofix (safe subset only)
 - [x] **P4** authoring loop — English rule -> verified -> installed
-- [ ] **P5** judgment layer (filter false positives) + 2nd hard rule
+- [x] **P5** judgment layer (filter false positives, cached) + optional-get rule
 - [ ] curate the 184-rule catalog into shipped defaults; CI gate; Scala
 
 ## Dev

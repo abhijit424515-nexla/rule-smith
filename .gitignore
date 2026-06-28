@@ -2,3 +2,4 @@
 __pycache__/
 *.pyc
 .lintel/
+.rulesmith_cache.json

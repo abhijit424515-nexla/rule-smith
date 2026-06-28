@@ -94,7 +94,7 @@ def analyze_method(method_ts, src_b, file="<src>"):
             closes = _close_calls(method_ts, var)
             if not closes:
                 findings.append(dict(
-                    rule=RULE, file=file, line=sl, col=sc, var=var,
+                    rule=RULE, file=file, line=sl, col=sc, var=var, judge=True,
                     message=f"`{var}` ({_type_leaf(type_text)}) is never closed",
                     note="no close() call found and the resource does not escape the method",
                     help=f"close it in a finally block, or use try-with-resources: "
@@ -115,7 +115,7 @@ def analyze_method(method_ts, src_b, file="<src>"):
                     break
             if not ok:
                 findings.append(dict(
-                    rule=RULE, file=file, line=sl, col=sc, var=var,
+                    rule=RULE, file=file, line=sl, col=sc, var=var, judge=True,
                     message=f"`{var}` ({_type_leaf(type_text)}) may not be closed on all paths",
                     note="close() does not post-dominate the acquisition; an exception "
                          "or early return bypasses it",
