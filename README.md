@@ -2,43 +2,64 @@
 
 **A coding rulebook a machine *runs* — not one an LLM *reads*.**
 
-You pasted your conventions into a `CLAUDE.md` and hoped the AI would enforce them. But a `CLAUDE.md` rule is prose pattern-matched by a language model. It has no control-flow graph, so it cannot answer the questions that actually catch bugs:
-
-> *Is `close()` on **every** path, including the early `return`?*
-> *Does the null-check **dominate** this dereference?*
-
-RuleSmith can, because every check runs a real **CFG + dominance** analysis. You describe a rule in plain English; it compiles to a tested, deterministic check and installs it into your CLI. **114 rules** ship today, mined from Checker Framework, Effective Java, NASA's Power of Ten, OWASP, and the FP literature.
-
----
-
-## Same code. Different flow. Opposite verdict.
-
-Real code from backend-connectors — a lost-update race a reviewer would skim past:
-
-```java
-// the bug                                    // the fix
-textBB.set(textBB.get() == null              textBB.updateAndGet(cur ->
-    ? init() : merge(textBB.get()));            cur == null ? init() : merge(cur));
-```
+You pasted your conventions into `CLAUDE.md` and hoped the AI would honor them. But a `CLAUDE.md` rule is prose pattern-matched by a language model — no control-flow graph, no call graph, no notion of lock state. RuleSmith compiles an English rule into a tested, deterministic check that runs every time, offline, no API key.
 
 ```console
-$ rulesmith lint --rules atomic-get-set-race .../pdf/strategy/DefaultStrategy.java
+$ rulesmith lint --rules atomic-get-set-race \
+    backend-connectors/.../pdf/strategy/DefaultStrategy.java
 warning[atomic-get-set-race]: Non-atomic get-then-set on Atomic 'textBB' loses concurrent updates.
-  --> DefaultStrategy.java:69
+  --> DefaultStrategy.java:69:13
    = note: value passed to set() is computed from get(); another thread can update between
    = help: use textBB.updateAndGet(...) or compareAndSet(...)
 ```
 
-A `CLAUDE.md` rule — and SonarQube — can't express this. It needs to see that the value written back is **derived from a prior read of the same atomic**. That's dataflow, not pattern-matching. The value you can't vibe out of a sentence.
+A lost-update race in shipped code. SonarQube doesn't flag it; a `CLAUDE.md` rule can't express it. It needs to see that the written value is **derived from a prior read of the same atomic** — dataflow, not text.
 
-## It finds real bugs, in shipped code
+---
+
+## See it
+
+**Same code, different flow, opposite verdict** — `examples/java/PaymentGateway.java`, five defects no syntax rule sees:
+
+```console
+$ rulesmith lint --rules $FIVE examples/java | grep warning
+warning[blocking-call-while-holding-lock]: fut.get() blocks until the Future completes while holding a lock.
+warning[builder-terminal-before-setters]: Builder 'b' is finalized by 'build()' before setter 'total()' runs on it.
+warning[guarded-by-lock-held]: Access to @GuardedBy("lock") field 'balance' without holding lock lock.
+warning[lambda-captures-mutable-state]: Lambda mutates captured array 'acc'.
+warning[pure-method-no-side-effects]: pure method calls a known-impure (mutating) method
+
+$ rulesmith lint --rules $FIVE examples/java-fixed
+0 finding(s) across 1 file(s).
+```
+
+**A real leak, deterministically** — whole-repo run was 1242 files, 0 parse errors:
 
 ```console
 $ rulesmith lint --rules resource-leak \
     backend-connectors/.../onedrive/OneDriveConnectorService.java
-warning[resource-leak]: `fileInput` (FileInputStream) is never closed  --> :516
+warning[resource-leak]: `outputStream` (OutputStream) is never closed  --> :392:5
+   = note: no close() call found and the resource does not escape the method
+   = help: close it in a finally block, or use try-with-resources
 ```
-Confirmed leak in production. Whole-repo run: **1242 files, 0 parse errors.** Every finding cites the graph fact behind it — reproducible every run, no AI.
+
+**Author a rule in English** — the LLM writes it, a fixture gate decides if it ships:
+
+```console
+$ rulesmith add "a switch over an enum must have a default case"
+[attempt 1] compiling rule via claude -p...
+[ok] violation.java: 1   [ok] clean.java: 0   installed 'enum-switch-default' (all green)
+```
+
+**Fix it** — deterministic codemod first, AI-fix the residual, colored diff in your terminal:
+
+```console
+$ rulesmith lint --fix --dry-run --rules resource-leak \
+    backend-connectors/.../onedrive/OneDriveConnectorService.java
+would fix .../OneDriveConnectorService.java: 2 resource(s) wrapped in try-with-resources
+
+2 finding(s), 2 auto-fixed.
+```
 
 ---
 
@@ -46,43 +67,46 @@ Confirmed leak in production. Whole-repo run: **1242 files, 0 parse errors.** Ev
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
-pip install -e .                      # exposes the `rulesmith` command
+pip install -e .                                  # exposes the `rulesmith` command
 
-rulesmith list                        # the 114 installed rules
-rulesmith lint path/to/src            # exit 1 on findings (CI-ready)
-rulesmith lint --fix path/to/src              # deterministic codemod + AI-fix the rest (sonnet), shows a diff
-rulesmith lint --fix --model none path/to/src # deterministic only, no AI
-rulesmith lint --fix --model opus path/to/src # AI-fix the residual with opus
-rulesmith lint --fix --refresh-cache path/to/src  # ignore the cached fix and recompute
+rulesmith list                                    # the 114 installed rules
+rulesmith lint path/to/src                        # exit 1 on findings (CI-ready)
+rulesmith lint --fix path/to/src                  # codemod + AI-fix the rest (sonnet), shows a diff
+rulesmith lint --fix --model none path/to/src     # deterministic only, no AI
+rulesmith lint --fix --model opus path/to/src     # AI-fix the residual with opus
 rulesmith add "a switch over an enum must have a default case"
 ```
 
-## Author a rule in English — and trust it
+---
 
-```console
-$ rulesmith add "do not catch NullPointerException; fix the root cause"
-[attempt 1] compiling rule via claude -p...
-[ok] violation.java: 1   [ok] clean.java: 0   installed 'no-catch-npe' (all green)
-```
+## How does it work?
 
-`claude -p` writes the rule **and** its pos/neg fixtures; a deterministic gate runs them and installs **only on green**. The LLM proposes; the test gate decides. That gate is exactly what a `CLAUDE.md` rule never gets.
+![RuleSmith architecture](diagram/ARCHITECTURE.svg)
 
-## AI builds the checks. Code runs them.
+Deterministic primitives (`parse → cfg → dominance → escape`) compute the facts that are expensive to get wrong. Two rule families ride them: **detective** rules find bugs (CFG-driven), **prescriptive** rules enforce conventions (AST + codemod). Claude is touched only to *author* a rule and (optionally) to *adjudicate* a borderline finding — both gated, both cached by `(rule, snippet)`, so the same code always gets the same verdict.
 
 | Action | Needs Claude? | Why |
 |--------|:---:|-----|
-| `lint` · `list` · CI gate | **No** | pure CFG + AST, deterministic, offline, no key |
+| `lint` · `list` · CI gate | **No** | pure CFG + AST, deterministic, offline |
 | `lint --fix` | **Default sonnet** | deterministic codemod, then AI-fix the residual (`--model none` to disable) |
 | `add "<english>"` | **Once** | codegen, then gated by fixtures |
 | `lint --judge` | **Cached** | adjudicate a false positive, then cached → AI-free |
 
-The everyday workflow runs forever with no API key. Claude is touched only to *author* a rule and (optionally) to *adjudicate* a borderline finding — both gated, both cached by `(rule, snippet)` so the same code always gets the same verdict.
+The trust mechanism for `add`: `claude -p` writes the rule **and** its pos/neg fixtures; a deterministic gate runs them and installs **only on green**. The LLM proposes; the test gate decides. That gate is exactly what a `CLAUDE.md` rule never gets.
 
-## How it works
+## How is it better?
 
-![RuleSmith architecture](diagram/ARCHITECTURE.svg)
+A `CLAUDE.md` rule is *read* by a model on every prompt — fuzzy, unenforced, no flow analysis. RuleSmith is *run* by a deterministic engine — same input, same verdict, citing the graph fact behind it.
 
-Deterministic primitives (`parse → cfg → dominance → escape`) compute the expensive-to-be-wrong facts. Two rule families ride them: **detective** rules (find bugs, CFG-driven) and **prescriptive** rules (conventions, AST + codemod). Claude only adjudicates the fuzzy residual.
+And it catches what the textbook linters structurally cannot. **114 rules** mined from Checker Framework, Effective Java, NASA's Power of Ten, OWASP, and the FP literature, including the flow-sensitive ones SonarQube and PMD don't ship:
+
+`builder-terminal-before-setters` (typestate) · `atomic-get-set-race` · `guarded-by-lock-held` · `blocking-call-while-holding-lock` (deadlock) · `pure-method-no-side-effects` (purity via call graph) · `command-query-separation` · `tell-dont-ask` · `lambda-captures-mutable-state` · `local-throw-catch-control-flow` · `null-deref-needs-dominating-guard`
+
+These need a real CFG, call graph, and dataflow — not pattern-matching. See `examples/real-world/` for five unmodified backend-connectors files, each lighting up 13–15 rules.
+
+---
+
+## Repo layout
 
 ```
 rulesmith/   the engine — parse, cfg (CFG+dominance), dataflow, report, cli, llm, authoring, judge
@@ -93,27 +117,13 @@ demo/        NOTES.md (MARP deck: why CLAUDE.md isn't enough) + rendered slides
 diagram/     architecture (excalidraw source + svg)
 ```
 
-## What it catches
-
-114 rules across null-safety, resource lifecycle, concurrency & locking,
-immutability/purity, error handling, type design, security (weak crypto, hardcoded secrets, broken trust managers), complexity metrics, and naming. Highlights — the flow-sensitive ones no text rule can see:
-
-`resource-leak` · `optional-get-without-ispresent` · `null-deref-needs-dominating-guard` · `builder-terminal-before-setters` (typestate) · `atomic-get-set-race` · `pure-method-no-side-effects` · `guarded-by-lock-held` · `command-query-separation` · `tell-dont-ask` · `blocking-call-while-holding-lock` · `lambda-captures-mutable-state`
-
-See `examples/real-world/` for five unmodified backend-connectors files, each lighting up 13–15 rules.
-
 ## Honest limits
 
-- Resource detection is name-based (no type resolution) → false positives like
-`OffsetStorageReader`. `--judge` filters them via `claude -p`, cached.
+- Resource detection is name-based (no type resolution) → false positives like `OffsetStorageReader`. `--judge` filters them via `claude -p`, cached.
 - CFG exception edges are coarse (entry-level, not per-statement).
-- Autofix covers only `resource-leak`'s provably-safe subset; the other 113 rules
-emit a `= help:` suggestion. `--fix` applies the deterministic codemod and then
-AI-fixes the residual via claude -p (default sonnet, parse-validated, colored diff);
-pass `--model none` to stay fully deterministic and AI-free.
+- Deterministic autofix covers only `resource-leak`'s provably-safe subset; the other 113 rules emit a `= help:` suggestion. `--fix` applies the codemod and then AI-fixes the residual via claude -p (default sonnet, parse-validated, colored diff); pass `--model none` to stay fully deterministic.
+- `--fix` results are cached at `/tmp/rulesmith.cache` keyed on (rules, file content, model); editing the file auto-invalidates, or pass `--refresh-cache`.
 - Formatting reflow is delegated to google-java-format.
-- `--fix` results are cached at `/tmp/rulesmith.cache` keyed on (rules, file
-  content, model); editing the file auto-invalidates, or pass `--refresh-cache`.
 
 ---
 

@@ -11,7 +11,7 @@ BOXES = [
     ("PR", 445, 300, 200, 92, "Primitives\nCFG · dominance\n· escape", "#a5d8ff"),
     ("RU", 685, 300, 175, 92, "Rules\ndetective +\nprescriptive", "#fff3bf"),
     ("RE", 900, 300, 175, 92, "Report\ndiagnostic +\nevidence", "#b2f2bb"),
-    ("FX", 1115, 300, 185, 92, "Fix / CI gate\ntry-with-resources\nexit 1", "#b2f2bb"),
+    ("FX", 1115, 300, 185, 92, "Fix / CI gate\ncodemod + AI-fix\nexit 1", "#b2f2bb"),
     # authoring loop (y=120)
     ("AD", 230, 120, 175, 80, 'add\n"<english>"', "#d0bfff"),
     ("CG", 445, 120, 200, 80, "claude -p\ncodegen", "#d0bfff"),
