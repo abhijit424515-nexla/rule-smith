@@ -242,8 +242,9 @@ td { color: #aaa; padding: 9px 10px; border-bottom: 1px solid #0e0e0e; }
 <h1 id="ai-builds-the-checks-code-runs-them">AI builds the checks. Code runs them.</h1>
 <table>
 <tr><th>Action</th><th>Needs Claude?</th><th>Why</th></tr>
-<tr><td>lint · list · --fix · CI gate</td><td><span class="ok">No</span></td><td>pure CFG + AST, deterministic, offline</td></tr>
+<tr><td>lint · list · CI gate</td><td><span class="ok">No</span></td><td>pure CFG + AST, deterministic, offline</td></tr>
 <tr><td>add "&lt;english&gt;"</td><td><span class="warn">Once</span></td><td>codegen, then gated by fixtures</td></tr>
+<tr><td>lint --fix</td><td><span class="warn">Default sonnet</span></td><td>codemod first, then AI-fix the residual (--model none = off)</td></tr>
 <tr><td>lint --judge</td><td><span class="warn">Cached</span></td><td>adjudicate, then cached → AI-free</td></tr>
 </table>
 <p>The everyday workflow runs forever with <strong>no API key</strong>. Claude only <em>authors</em> a<br />
@@ -286,7 +287,7 @@ td { color: #aaa; padding: 9px 10px; border-bottom: 1px solid #0e0e0e; }
 </div>
 </div>
 <p>The LLM writes the rule — a <strong>deterministic fixture gate</strong> decides if it ships.<br />
-That gate is exactly what a CLAUDE.md rule never gets. <strong>114 rules</strong> shipped this<br />
+That gate is exactly what a CLAUDE.md rule never gets. <strong>184 rules</strong> shipped this<br />
 way.</p>
 </section>
 </foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="8" data-paginate="true" data-theme="default" data-style="@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&amp;family=Raleway:wght@100;200;300&amp;display=swap');
@@ -356,7 +357,7 @@ td { color: #aaa; padding: 9px 10px; border-bottom: 1px solid #0e0e0e; }
 " lang="en-IN" data-marpit-pagination="9" style="--paginate:true;--theme:default;--style:@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&amp;family=Raleway:wght@100;200;300&amp;display=swap')
 ;" data-marpit-pagination-total="16">
 <h3 id="beat-5--and-it-fixes-them">Beat 5 — and it fixes them</h3>
-<h1 id="safe-autofix-the-rest-suggested">Safe autofix, the rest suggested</h1>
+<h1 id="codemod-first-ai-fixes-the-rest">Codemod first, AI-fixes the rest</h1>
 <div class="terminal" style="font-size:0.58em">
 <div class="tbar"><div class="dot" style="background:#ff5f56"></div><div class="dot" style="background:#ffbd2e"></div><div class="dot" style="background:#27c93f"></div></div>
 <div class="tbody">
@@ -367,8 +368,7 @@ td { color: #aaa; padding: 9px 10px; border-bottom: 1px solid #0e0e0e; }
 <span class="out">2 finding(s), 2 auto-fixed.</span>
 </div>
 </div>
-<p>The deterministic <code>--fix</code> touches only the <strong>provably-safe subset</strong> — a pure codemod,<br />
-no AI. Everything else stays a suggestion (or add <code>--model</code> to AI-fix it via claude -p).</p>
+<p><code>--fix</code> runs the <strong>deterministic codemod first</strong> — the provably-safe subset, no AI (here it wraps both leaks in try-with-resources). Whatever it can't prove safe is <strong>AI-fixed by default</strong> via claude -p (sonnet, parse-validated); pass <code>--model none</code> to stay fully deterministic.</p>
 </section>
 </foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="10" data-paginate="true" data-theme="default" data-style="@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&amp;family=Raleway:wght@100;200;300&amp;display=swap');
 section { background: #000; color: #fff; font-family: 'Raleway', sans-serif; font-weight: 200; padding: 52px 68px; line-height: 1.5; font-size: 21px; }
@@ -398,7 +398,7 @@ td { color: #aaa; padding: 9px 10px; border-bottom: 1px solid #0e0e0e; }
 <h3 id="beat-6--does-it-work-on-real-code">Beat 6 — does it work on real code?</h3>
 <h1 id="differentiated-rules-real-production-files">Differentiated rules, real production files</h1>
 <div style="display:flex; gap:14px; margin-top:10px;">
-<div class="card" style="flex:1; text-align:center;"><div class="big">114</div><div style="color:#666; font-size:0.7em;">RULES</div></div>
+<div class="card" style="flex:1; text-align:center;"><div class="big">184</div><div style="color:#666; font-size:0.7em;">RULES</div></div>
 <div class="card" style="flex:1; text-align:center;"><div class="big">1242</div><div style="color:#666; font-size:0.7em;">FILES SCANNED</div></div>
 <div class="card" style="flex:1; text-align:center;"><div class="big">0</div><div style="color:#666; font-size:0.7em;">PARSE ERRORS</div></div>
 </div>
@@ -658,7 +658,7 @@ td { color: #aaa; padding: 9px 10px; border-bottom: 1px solid #0e0e0e; }
 <h1 id="claudemd-is-read">CLAUDE.md is read.</h1>
 <h1 id="rulesmith-is-run">RuleSmith is run.</h1>
 <div style="display:flex; gap:18px; margin-top:24px;">
-<div class="card"><strong>114 rules</strong> implemented</div>
+<div class="card"><strong>184 rules</strong> implemented</div>
 <div class="card"><strong>typestate · purity · concurrency</strong> beyond SonarQube</div>
 <div class="card"><strong>0</strong> API keys to run</div>
 </div>
@@ -671,7 +671,7 @@ tree-sitter + CFG/dominance + claude -p · catalog mined from Checker Framework,
   cd ~/workspace/experiments/rule-smith &amp;&amp; source .venv/bin/activate
   BC=~/Desktop/clones/backend-connectors
   FIVE=builder-terminal-before-setters,pure-method-no-side-effects,guarded-by-lock-held,blocking-call-while-holding-lock,lambda-captures-mutable-state
-Record a fallback video of the `add` beat (calls claude -p).</p></div><div class="bespoke-marp-note" data-index="1" tabindex="0"><p>Beat 0, 45s. Set up that the interesting rules are the ones standard tools miss.</p></div><div class="bespoke-marp-note" data-index="2" tabindex="0"><p>Beat 1, 110s. The money slide. Typestate, lock-dominance, deadlock, purity, closure capture -- all in one screen.</p></div><div class="bespoke-marp-note" data-index="3" tabindex="0"><p>Beat 1 continued. This is the slide that answers &quot;isn't this just SonarQube?&quot;. No -- these are the ones it misses.</p></div><div class="bespoke-marp-note" data-index="4" tabindex="0"><p>Beat 2, 75s. The star finding. Real backend-connectors code. Read the textBB line aloud.</p></div><div class="bespoke-marp-note" data-index="5" tabindex="0"><p>Preempts &quot;isn't this just AI linting?&quot;. The runtime is deterministic code.</p></div><div class="bespoke-marp-note" data-index="6" tabindex="0"><p>Beat 3, 90s. Trust = the fixture gate. Fallback: play recording.</p></div><div class="bespoke-marp-note" data-index="7" tabindex="0"><p>Beat 4, 75s. AI-in-the-loop without losing reproducibility.</p></div><div class="bespoke-marp-note" data-index="8" tabindex="0"><p>Beat 5, 45s. Deterministic --fix won't touch what it can't prove safe; --fix --model opts into AI for the rest.</p></div><div class="bespoke-marp-note" data-index="9" tabindex="0"><p>Beat 6, 90s. Five real findings, one per slide. The atomic race already shown is the headliner.</p></div><div class="bespoke-marp-note" data-index="10" tabindex="0"><p>Real file 1/5. The headliner.</p></div><div class="bespoke-marp-note" data-index="11" tabindex="0"><p>Real file 2/5. Design smell, real code.</p></div><div class="bespoke-marp-note" data-index="12" tabindex="0"><p>Real file 3/5. CFG post-dominance over exception edges.</p></div><div class="bespoke-marp-note" data-index="13" tabindex="0"><p>Real file 4/5.</p></div><div class="bespoke-marp-note" data-index="14" tabindex="0"><p>Real file 5/5. Ties back to Beat 5 autofix.</p></div><div class="bespoke-marp-note" data-index="15" tabindex="0"><p>Close, 30s. The differentiator: the rules that matter are the ones standard tools
+Record a fallback video of the `add` beat (calls claude -p).</p></div><div class="bespoke-marp-note" data-index="1" tabindex="0"><p>Beat 0, 45s. Set up that the interesting rules are the ones standard tools miss.</p></div><div class="bespoke-marp-note" data-index="2" tabindex="0"><p>Beat 1, 110s. The money slide. Typestate, lock-dominance, deadlock, purity, closure capture -- all in one screen.</p></div><div class="bespoke-marp-note" data-index="3" tabindex="0"><p>Beat 1 continued. This is the slide that answers &quot;isn't this just SonarQube?&quot;. No -- these are the ones it misses.</p></div><div class="bespoke-marp-note" data-index="4" tabindex="0"><p>Beat 2, 75s. The star finding. Real backend-connectors code. Read the textBB line aloud.</p></div><div class="bespoke-marp-note" data-index="5" tabindex="0"><p>Preempts &quot;isn't this just AI linting?&quot;. The runtime is deterministic code.</p></div><div class="bespoke-marp-note" data-index="6" tabindex="0"><p>Beat 3, 90s. Trust = the fixture gate. Fallback: play recording.</p></div><div class="bespoke-marp-note" data-index="7" tabindex="0"><p>Beat 4, 75s. AI-in-the-loop without losing reproducibility.</p></div><div class="bespoke-marp-note" data-index="8" tabindex="0"><p>Beat 5, 45s. Codemod handles the provably-safe subset with no AI; the residual is AI-fixed by default (sonnet); --model none keeps it fully deterministic.</p></div><div class="bespoke-marp-note" data-index="9" tabindex="0"><p>Beat 6, 90s. Five real findings, one per slide. The atomic race already shown is the headliner.</p></div><div class="bespoke-marp-note" data-index="10" tabindex="0"><p>Real file 1/5. The headliner.</p></div><div class="bespoke-marp-note" data-index="11" tabindex="0"><p>Real file 2/5. Design smell, real code.</p></div><div class="bespoke-marp-note" data-index="12" tabindex="0"><p>Real file 3/5. CFG post-dominance over exception edges.</p></div><div class="bespoke-marp-note" data-index="13" tabindex="0"><p>Real file 4/5.</p></div><div class="bespoke-marp-note" data-index="14" tabindex="0"><p>Real file 5/5. Ties back to Beat 5 autofix.</p></div><div class="bespoke-marp-note" data-index="15" tabindex="0"><p>Close, 30s. The differentiator: the rules that matter are the ones standard tools
 miss, and an English description compiles to one. Cheat sheet:
 - Beat 1: examples/java/PaymentGateway.java (5) vs java-fixed (0)
 - Star real catch: DefaultStrategy.java:69 atomic-get-set-race

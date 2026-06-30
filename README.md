@@ -69,7 +69,7 @@ would fix .../OneDriveConnectorService.java: 2 resource(s) wrapped in try-with-r
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e .                                  # exposes the `rulesmith` command
 
-rulesmith list                                    # the 114 installed rules
+rulesmith list                                    # the 184 installed rules
 rulesmith lint path/to/src                        # exit 1 on findings (CI-ready)
 rulesmith lint --fix path/to/src                  # codemod + AI-fix the rest (sonnet), shows a diff
 rulesmith lint --fix --model none path/to/src     # deterministic only, no AI
@@ -98,11 +98,11 @@ The trust mechanism for `add`: `claude -p` writes the rule **and** its pos/neg f
 
 A `CLAUDE.md` rule is *read* by a model on every prompt — fuzzy, unenforced, no flow analysis. RuleSmith is *run* by a deterministic engine — same input, same verdict, citing the graph fact behind it.
 
-And it catches what the textbook linters structurally cannot. **114 rules** mined from Checker Framework, Effective Java, NASA's Power of Ten, OWASP, and the FP literature, including the flow-sensitive ones SonarQube and PMD don't ship:
+And it catches what the textbook linters structurally cannot. **184 rules** mined from Checker Framework, Effective Java, NASA's Power of Ten, OWASP, and the FP literature, including the flow-sensitive ones SonarQube and PMD don't ship:
 
 `builder-terminal-before-setters` (typestate) · `atomic-get-set-race` · `guarded-by-lock-held` · `blocking-call-while-holding-lock` (deadlock) · `pure-method-no-side-effects` (purity via call graph) · `command-query-separation` · `tell-dont-ask` · `lambda-captures-mutable-state` · `local-throw-catch-control-flow` · `null-deref-needs-dominating-guard`
 
-These need a real CFG, call graph, and dataflow — not pattern-matching. See `examples/real-world/` for five unmodified backend-connectors files, each lighting up 13–15 rules.
+These need a real CFG, call graph, and dataflow — not pattern-matching. See `examples/real-world/` for five unmodified backend-connectors files, each lighting up 19–25 rules.
 
 ---
 
@@ -110,7 +110,7 @@ These need a real CFG, call graph, and dataflow — not pattern-matching. See `e
 
 ```
 rulesmith/   the engine — parse, cfg (CFG+dominance), dataflow, report, cli, llm, authoring, judge
-rules/       114 installed rule modules, each headed by its exact English description
+rules/       184 installed rule modules, each headed by its exact English description
 fixtures/    pos/neg test cases per rule — the trust mechanism
 examples/    PaymentGateway before/after, real-world/ (5 production files), WALKTHROUGH
 demo/        NOTES.md (MARP deck: why CLAUDE.md isn't enough) + rendered slides
@@ -121,14 +121,14 @@ diagram/     architecture (excalidraw source + svg)
 
 - Resource detection is name-based (no type resolution) → false positives like `OffsetStorageReader`. `--judge` filters them via `claude -p`, cached.
 - CFG exception edges are coarse (entry-level, not per-statement).
-- Deterministic autofix covers only `resource-leak`'s provably-safe subset; the other 113 rules emit a `= help:` suggestion. `--fix` applies the codemod and then AI-fixes the residual via claude -p (default sonnet, parse-validated, colored diff); pass `--model none` to stay fully deterministic.
+- Deterministic autofix covers only `resource-leak`'s provably-safe subset; the other 183 rules emit a `= help:` suggestion. `--fix` applies the codemod and then AI-fixes the residual via claude -p (default sonnet, parse-validated, colored diff); pass `--model none` to stay fully deterministic.
 - `--fix` results are cached at `/tmp/rulesmith.cache` keyed on (rules, file content, model); editing the file auto-invalidates, or pass `--refresh-cache`.
 - Formatting reflow is delegated to google-java-format.
 
 
 ## The interesting part: where this can go
 
-Today's 114 rules barely scratch what the substrate allows. Once you have a CFG, dominance, a call graph, and def-use chains, a whole class of properties stops being a "hard AI problem" and becomes a *graph query* — decidable, reproducible, fast. Every powerful rule has the same shape: **a question about paths, not about text.**
+Today's 184 rules barely scratch what the substrate allows. Once you have a CFG, dominance, a call graph, and def-use chains, a whole class of properties stops being a "hard AI problem" and becomes a *graph query* — decidable, reproducible, fast. Every powerful rule has the same shape: **a question about paths, not about text.**
 
 - *Typestate* — "open before read", "lock before touch", "no use after close": reachability over the CFG.
 - *Must-before / must-after* — dominance and post-dominance give you init-before-use, validate-before-trust, acquire-before-release from two graph relations.

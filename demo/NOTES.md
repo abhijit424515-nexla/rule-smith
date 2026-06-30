@@ -156,8 +156,9 @@ production, found deterministically. **No string rule finds this.**
 
 <table>
 <tr><th>Action</th><th>Needs Claude?</th><th>Why</th></tr>
-<tr><td>lint · list · --fix · CI gate</td><td><span class="ok">No</span></td><td>pure CFG + AST, deterministic, offline</td></tr>
+<tr><td>lint · list · CI gate</td><td><span class="ok">No</span></td><td>pure CFG + AST, deterministic, offline</td></tr>
 <tr><td>add "&lt;english&gt;"</td><td><span class="warn">Once</span></td><td>codegen, then gated by fixtures</td></tr>
+<tr><td>lint --fix</td><td><span class="warn">Default sonnet</span></td><td>codemod first, then AI-fix the residual (--model none = off)</td></tr>
 <tr><td>lint --judge</td><td><span class="warn">Cached</span></td><td>adjudicate, then cached → AI-free</td></tr>
 </table>
 
@@ -183,7 +184,7 @@ rule (gated by tests) and optionally *adjudicates* a borderline finding (cached)
 </div>
 
 The LLM writes the rule — a **deterministic fixture gate** decides if it ships.
-That gate is exactly what a CLAUDE.md rule never gets. **114 rules** shipped this
+That gate is exactly what a CLAUDE.md rule never gets. **184 rules** shipped this
 way.
 
 <!-- Beat 3, 90s. Trust = the fixture gate. Fallback: play recording. -->
@@ -215,7 +216,7 @@ verdict is cached** by `(rule, snippet)` so it's reproducible.
 
 ### Beat 5 — and it fixes them
 
-# Safe autofix, the rest suggested
+# Codemod first, AI-fixes the rest
 
 <div class="terminal" style="font-size:0.58em">
 <div class="tbar"><div class="dot" style="background:#ff5f56"></div><div class="dot" style="background:#ffbd2e"></div><div class="dot" style="background:#27c93f"></div></div>
@@ -228,10 +229,9 @@ verdict is cached** by `(rule, snippet)` so it's reproducible.
 </div>
 </div>
 
-The deterministic `--fix` touches only the **provably-safe subset** — a pure codemod,
-no AI. Everything else stays a suggestion (or add `--model` to AI-fix it via claude -p).
+`--fix` runs the **deterministic codemod first** — the provably-safe subset, no AI (here it wraps both leaks in try-with-resources). Whatever it can't prove safe is **AI-fixed by default** via claude -p (sonnet, parse-validated); pass `--model none` to stay fully deterministic.
 
-<!-- Beat 5, 45s. Deterministic --fix won't touch what it can't prove safe; --fix --model opts into AI for the rest. -->
+<!-- Beat 5, 45s. Codemod handles the provably-safe subset with no AI; the residual is AI-fixed by default (sonnet); --model none keeps it fully deterministic. -->
 
 ---
 
@@ -240,7 +240,7 @@ no AI. Everything else stays a suggestion (or add `--model` to AI-fix it via cla
 # Differentiated rules, real production files
 
 <div style="display:flex; gap:14px; margin-top:10px;">
-<div class="card" style="flex:1; text-align:center;"><div class="big">114</div><div style="color:#666; font-size:0.7em;">RULES</div></div>
+<div class="card" style="flex:1; text-align:center;"><div class="big">184</div><div style="color:#666; font-size:0.7em;">RULES</div></div>
 <div class="card" style="flex:1; text-align:center;"><div class="big">1242</div><div style="color:#666; font-size:0.7em;">FILES SCANNED</div></div>
 <div class="card" style="flex:1; text-align:center;"><div class="big">0</div><div style="color:#666; font-size:0.7em;">PARSE ERRORS</div></div>
 </div>
@@ -399,7 +399,7 @@ The flagship — post-dominance proves close() is on no path. And it `--fix`es.
 # RuleSmith is run.
 
 <div style="display:flex; gap:18px; margin-top:24px;">
-<div class="card"><strong>114 rules</strong> implemented</div>
+<div class="card"><strong>184 rules</strong> implemented</div>
 <div class="card"><strong>typestate · purity · concurrency</strong> beyond SonarQube</div>
 <div class="card"><strong>0</strong> API keys to run</div>
 </div>
