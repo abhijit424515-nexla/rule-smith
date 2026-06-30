@@ -1,3 +1,5 @@
+# rule: do not catch NullPointerException; fix the root cause instead
+
 from rulesmith.parse import parse, find, span, node_text
 
 RULE = "no-catch-npe"

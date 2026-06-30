@@ -1,3 +1,5 @@
+# rule: do not override Object.finalize()
+
 from rulesmith.parse import parse, find, node_text, span
 
 RULE = "no-override-finalize"

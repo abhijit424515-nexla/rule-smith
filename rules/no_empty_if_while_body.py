@@ -1,3 +1,5 @@
+# rule: if and while statements must not have empty bodies
+
 from rulesmith.parse import parse, find, span, node_text
 
 RULE = "no-empty-if-while-body"

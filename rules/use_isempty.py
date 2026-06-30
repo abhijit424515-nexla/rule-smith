@@ -1,3 +1,5 @@
+# rule: use isEmpty() instead of comparing size() == 0 on a collection
+
 from rulesmith.parse import parse, find, node_text
 
 RULE = "use-isempty"

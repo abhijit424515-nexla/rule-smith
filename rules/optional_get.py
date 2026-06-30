@@ -1,3 +1,5 @@
+# rule: Optional.get() must be called only when guarded by an isPresent() check
+
 """Rule: optional-get-without-ispresent (detective, dominance-based).
 
 Optional.get() must be dominated by a presence guard (isPresent()/isDefined()/

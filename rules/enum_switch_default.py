@@ -1,3 +1,5 @@
+# rule: a switch statement over an enum must have a default case
+
 from rulesmith.parse import parse, find, node_text
 
 RULE = "enum-switch-default"

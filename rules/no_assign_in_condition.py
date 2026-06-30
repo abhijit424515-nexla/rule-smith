@@ -1,3 +1,5 @@
+# rule: do not perform an assignment inside an if or while condition
+
 from rulesmith.parse import parse, find, node_text, span
 
 RULE = "no-assign-in-condition"

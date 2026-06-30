@@ -1,3 +1,5 @@
+# rule: catch blocks must not be empty (swallowed exceptions)
+
 from rulesmith.parse import parse, find, span
 
 RULE = "empty-catch-block"

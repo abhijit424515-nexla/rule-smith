@@ -1,3 +1,5 @@
+# rule: a class that overrides equals() must also override hashCode()
+
 from rulesmith.parse import parse, find, node_text, span
 
 RULE = "equals-hashcode-pair"

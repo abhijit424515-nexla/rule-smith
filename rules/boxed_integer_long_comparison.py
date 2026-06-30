@@ -1,3 +1,5 @@
+# rule: do not compare boxed Integer or Long values with == or !=, use equals
+
 from rulesmith.parse import parse, find, span, node_text
 
 RULE = "boxed-integer-long-comparison"

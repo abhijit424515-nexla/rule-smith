@@ -1,3 +1,5 @@
+# rule: do not use System.out or System.err for logging; use a logger
+
 from rulesmith.parse import parse, find, node_text, span
 
 RULE = "no-system-out-err"

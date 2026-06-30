@@ -1,3 +1,5 @@
+# rule: do not call printStackTrace; use a logger instead
+
 from rulesmith.parse import parse, find, node_text, span
 
 RULE = "no-printstacktrace"

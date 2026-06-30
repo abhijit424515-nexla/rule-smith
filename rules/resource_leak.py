@@ -1,3 +1,5 @@
+# rule: every AutoCloseable resource acquired in a method must be closed on all paths
+
 """Rule: resource-leak (flagship, detective).
 
 An AutoCloseable acquired into a local must be closed on every path. Composes

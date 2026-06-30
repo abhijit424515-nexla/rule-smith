@@ -1,3 +1,5 @@
+# rule: catch blocks must not catch generic Exception, Throwable, or Error
+
 from rulesmith.parse import parse, find, node_text, span
 
 RULE = "no-generic-catch"

@@ -1,3 +1,5 @@
+# rule: do not use the new String(...) constructor; use the string literal directly
+
 from rulesmith.parse import parse, find, span, node_text
 
 RULE = "no-new-string"

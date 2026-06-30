@@ -1,3 +1,5 @@
+# rule: compare strings with .equals(), never with == or !=
+
 from rulesmith.parse import parse, find, node_text, span
 
 RULE = "string-equality-check"

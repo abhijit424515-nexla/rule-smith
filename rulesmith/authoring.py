@@ -123,8 +123,9 @@ def add_rule(english, max_attempts=2):
         if ok:
             # install
             dest = os.path.join(RULES_DIR, rid.replace("-", "_") + ".py")
+            header = f"# rule: {english}\n# (authored by RuleSmith from the description above)\n\n"
             with open(dest, "w") as f:
-                f.write(spec["module"])
+                f.write(header + spec["module"])
             fxd = os.path.join(FIX_DIR, rid.replace("-", "_"))
             os.makedirs(fxd, exist_ok=True)
             for fx in spec["fixtures"]:

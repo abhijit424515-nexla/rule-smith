@@ -1,3 +1,5 @@
+# rule: switch cases must not fall through; each case must end with break, return, or throw
+
 from rulesmith.parse import parse, find, span, node_text
 
 RULE = "no-switch-fallthrough"

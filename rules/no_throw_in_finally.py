@@ -1,3 +1,5 @@
+# rule: do not throw exceptions from within a finally block
+
 from rulesmith.parse import parse, find, node_text, span
 
 RULE = "no-throw-in-finally"
