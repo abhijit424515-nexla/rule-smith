@@ -100,7 +100,10 @@ def _verify(module_code, fixtures, tmp):
 
 
 def add_rule(english, max_attempts=2):
-    tmp = os.path.join("/tmp", "rulesmith_gen.py")
+    import tempfile
+
+    _fd, tmp = tempfile.mkstemp(prefix="rulesmith_gen_", suffix=".py")
+    os.close(_fd)
     feedback = ""
     for attempt in range(1, max_attempts + 1):
         prompt = PROMPT.format(api=API, rule=english)
