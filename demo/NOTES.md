@@ -229,9 +229,9 @@ verdict is cached** by `(rule, snippet)` so it's reproducible.
 </div>
 
 The deterministic `--fix` touches only the **provably-safe subset** — a pure codemod,
-no AI. Everything else stays a suggestion (or use the opt-in `--ai-fix`, via claude -p).
+no AI. Everything else stays a suggestion (or add `--model` to AI-fix it via claude -p).
 
-<!-- Beat 5, 45s. Deterministic --fix won't touch what it can't prove safe; --ai-fix is the explicit opt-in. -->
+<!-- Beat 5, 45s. Deterministic --fix won't touch what it can't prove safe; --fix --model opts into AI for the rest. -->
 
 ---
 

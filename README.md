@@ -50,8 +50,9 @@ pip install -e .                      # exposes the `rulesmith` command
 
 rulesmith list                        # the 114 installed rules
 rulesmith lint path/to/src            # exit 1 on findings (CI-ready)
-rulesmith lint --fix path/to/src      # deterministic try-with-resources rewrite (resource-leak only)
-rulesmith lint --ai-fix path/to/src   # fix any finding in place via claude -p (parse-validated)
+rulesmith lint --fix path/to/src              # deterministic codemod + AI-fix the rest (sonnet), shows a diff
+rulesmith lint --fix --model none path/to/src # deterministic only, no AI
+rulesmith lint --fix --model opus path/to/src # AI-fix the residual with opus
 rulesmith add "a switch over an enum must have a default case"
 ```
 
@@ -69,10 +70,10 @@ $ rulesmith add "do not catch NullPointerException; fix the root cause"
 
 | Action | Needs Claude? | Why |
 |--------|:---:|-----|
-| `lint` · `list` · `--fix` · CI gate | **No** | pure CFG + AST, deterministic, offline, no key |
+| `lint` · `list` · CI gate | **No** | pure CFG + AST, deterministic, offline, no key |
+| `lint --fix` | **Default sonnet** | deterministic codemod, then AI-fix the residual (`--model none` to disable) |
 | `add "<english>"` | **Once** | codegen, then gated by fixtures |
 | `lint --judge` | **Cached** | adjudicate a false positive, then cached → AI-free |
-| `lint --ai-fix` | **Opt-in** | explicit flag: rewrite a finding via claude -p, parse-validated |
 
 The everyday workflow runs forever with no API key. Claude is touched only to *author* a rule and (optionally) to *adjudicate* a borderline finding — both gated, both cached by `(rule, snippet)` so the same code always gets the same verdict.
 
@@ -106,8 +107,9 @@ See `examples/real-world/` for five unmodified backend-connectors files, each li
 `OffsetStorageReader`. `--judge` filters them via `claude -p`, cached.
 - CFG exception edges are coarse (entry-level, not per-statement).
 - Autofix covers only `resource-leak`'s provably-safe subset; the other 113 rules
-emit a `= help:` suggestion you apply yourself. The deterministic `--fix` never
-AI-rewrites code; the opt-in `--ai-fix` flag will (via claude -p, parse-validated).
+emit a `= help:` suggestion. `--fix` applies the deterministic codemod and then
+AI-fixes the residual via claude -p (default sonnet, parse-validated, colored diff);
+pass `--model none` to stay fully deterministic and AI-free.
 - Formatting reflow is delegated to google-java-format.
 
 ---

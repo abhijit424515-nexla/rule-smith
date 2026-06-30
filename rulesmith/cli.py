@@ -36,6 +36,38 @@ def discover_rules():
 RULES = discover_rules()
 
 
+def _analyze(src, rel, rules):
+    out = []
+    for name, mod in RULES.items():
+        if rules and name not in rules:
+            continue
+        out += mod.analyze_source(src, rel)
+    return out
+
+
+def _print_diff(before, after, path):
+    import difflib
+    import sys
+
+    tty = sys.stdout.isatty()
+    R, G, C, Z = (
+        ("\033[31m", "\033[32m", "\033[36m", "\033[0m") if tty else ("", "", "", "")
+    )
+    for line in difflib.unified_diff(
+        before.splitlines(), after.splitlines(), fromfile=path, tofile=path, lineterm=""
+    ):
+        if line.startswith("+++") or line.startswith("---"):
+            print(line)
+        elif line.startswith("+"):
+            print(f"{G}{line}{Z}")
+        elif line.startswith("-"):
+            print(f"{R}{line}{Z}")
+        elif line.startswith("@@"):
+            print(f"{C}{line}{Z}")
+        else:
+            print(line)
+
+
 def _java_files(paths):
     out = []
     for p in paths:
@@ -75,11 +107,7 @@ def cmd_lint(args):
             continue
         rel = os.path.relpath(f)
         # always analyze, so the finding count is honest regardless of --fix
-        findings = []
-        for name, mod in RULES.items():
-            if args.rules and name not in args.rules:
-                continue
-            findings += mod.analyze_source(src, rel)
+        findings = _analyze(src, rel, args.rules)
         if args.judge and findings:
             from rulesmith import judge as judgemod
 
@@ -98,44 +126,42 @@ def cmd_lint(args):
             findings = kept
         total += len(findings)
 
-        # deterministic autofix (resource-leak only)
-        if args.fix and "resource-leak" in (args.rules or {"resource-leak"}):
+        if args.fix:
+            before = src
+            # deterministic codemod first (resource-leak only), AI-free
             edits, _ = resource_leak.fix_edits(src, rel)
             if edits:
                 src = resource_leak.apply_edits(src, edits)
+                auto_fixed += len(edits) // 2
+            # AI-fix whatever the codemod could not fix (skip if --model none)
+            if args.model and args.model.lower() != "none":
+                remaining = _analyze(src, rel, args.rules)
+                if remaining:
+                    from rulesmith import aifix
+
+                    new_src, ok = aifix.ai_fix_file(
+                        src, remaining, rel, model=args.model
+                    )
+                    if ok and new_src != src:
+                        src = new_src
+                        ai_fixed += 1
+                    elif not ok:
+                        print(f"ai-fix skipped {rel}: reply did not parse")
+            if src != before:
+                _print_diff(before, src, rel)
                 if not args.dry_run:
                     open(f, "w", encoding="utf8").write(src)
-                auto_fixed += len(edits) // 2
-                print(
-                    f"{'would fix' if args.dry_run else 'fixed'} {rel}: "
-                    f"{len(edits) // 2} resource(s) wrapped in try-with-resources"
-                )
-
-        # AI fix (any rule) via claude -p, parse-validated before writing
-        if args.ai_fix and findings:
-            from rulesmith import aifix
-
-            new_src, ok = aifix.ai_fix_file(src, findings, rel, model=args.model)
-            if ok and new_src != src:
-                if not args.dry_run:
-                    open(f, "w", encoding="utf8").write(new_src)
-                ai_fixed += 1
-                print(f"{'would ai-fix' if args.dry_run else 'ai-fixed'} {rel}")
-            elif not ok:
-                print(f"ai-fix skipped {rel}: reply did not parse, left unchanged")
-
-        if not (args.fix or args.ai_fix):
+        else:
             for fd in findings:
                 print(format_finding(fd))
                 print()
 
-    if args.fix or args.ai_fix:
-        parts = [f"{total} finding(s)"]
-        if args.fix:
-            parts.append(f"{auto_fixed} auto-fixed")
-        if args.ai_fix:
-            parts.append(f"{ai_fixed} file(s) ai-fixed")
-        print("\n" + ", ".join(parts) + ".")
+    if args.fix:
+        verb = "would fix" if args.dry_run else "fixed"
+        parts = [f"{total} finding(s)", f"{auto_fixed} auto-fixed"]
+        if args.model and args.model.lower() != "none":
+            parts.append(f"{ai_fixed} file(s) ai-fixed ({args.model})")
+        print(f"\n{verb}: " + ", ".join(parts) + ".")
         return 0
     if args.judge:
         from rulesmith import judge as judgemod
@@ -166,17 +192,18 @@ def main(argv=None):
     sub.add_parser("list", help="list installed rules").set_defaults(fn=cmd_list)
     lp = sub.add_parser("lint", help="lint Java files/dirs")
     lp.add_argument("paths", nargs="+")
-    lp.add_argument("--fix", action="store_true", help="apply safe autofixes")
     lp.add_argument(
-        "--dry-run", action="store_true", help="with --fix/--ai-fix: do not write"
-    )
-    lp.add_argument(
-        "--ai-fix",
+        "--fix",
         action="store_true",
-        help="fix findings in place via claude -p (parse-validated)",
+        help="fix in place (deterministic; add --model to AI-fix the rest)",
     )
     lp.add_argument(
-        "--model", default=None, help="claude model for --ai-fix (e.g. opus, sonnet)"
+        "--dry-run", action="store_true", help="with --fix: show the diff, do not write"
+    )
+    lp.add_argument(
+        "--model",
+        default="sonnet",
+        help="with --fix: model to AI-fix the residual via claude -p (default: sonnet; 'none' = deterministic only)",
     )
     lp.add_argument(
         "--judge",
