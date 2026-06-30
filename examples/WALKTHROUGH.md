@@ -1,48 +1,46 @@
-# Walkthrough — flow-sensitive bugs a CLAUDE.md can't catch
+# Walkthrough — the rules SonarQube doesn't run
 
-`examples/java/PaymentGateway.java` has ten methods. Each is syntactically
-ordinary — the defect lives in the control or data flow. A prose rule in a
-CLAUDE.md is read by an LLM matching text; it has no CFG, so it cannot decide
-"is close() on every path?" or "does the null-check dominate this deref?".
-RuleSmith runs the actual analysis.
+`examples/java/PaymentGateway.java` has five defects that standard linters miss —
+each needs typestate, purity, lock-state, or closure reasoning, not a syntax
+pattern. `examples/java-fixed/` is the same code repaired (lints clean).
 
 ```
 alias rulesmith='python -m rulesmith.cli'
-TEN=resource-leak,optional-get-without-ispresent,null-deref-needs-dominating-guard,unchecked-downcast,field-read-before-assign,non-atomic-shared-update,guarded-by-lock-held,no-string-concat-in-loop,no-superfluous-else,constructor-definite-assignment
+FIVE=builder-terminal-before-setters,pure-method-no-side-effects,guarded-by-lock-held,blocking-call-while-holding-lock,lambda-captures-mutable-state
 ```
 
-## The ten checks (each flow-sensitive)
+## The five (each beyond SonarQube/PMD)
 
-| # | Rule | Why a text rule misses it |
-|---|------|----------------------------|
-| 1 | field-read-before-assign | field read before its assignment *in the ctor* |
-| 2 | resource-leak | close() exists, but an early `return` skips it on one path |
-| 3 | optional-get-without-ispresent | get() not *dominated* by isPresent() |
-| 4 | null-deref-needs-dominating-guard | guard misses one path to the deref |
-| 5 | unchecked-downcast | cast not *dominated* by an instanceof |
-| 6 | non-atomic-shared-update | read-modify-write on a @GuardedBy field |
-| 7 | guarded-by-lock-held | @GuardedBy field touched without the lock |
-| 8 | no-string-concat-in-loop | += inside a loop (O(n^2)) |
-| 9 | no-superfluous-else | else after a branch that always returns |
-| 10 | constructor-definite-assignment | field not assigned on every ctor path |
+| Rule | Defect | Why a text rule misses it |
+|------|--------|----------------------------|
+| builder-terminal-before-setters | setter runs after `build()` | *typestate* — tracks call ordering |
+| guarded-by-lock-held | `@GuardedBy` field read without the lock | needs lock-state + dominance |
+| blocking-call-while-holding-lock | `Future.get()` inside `synchronized` | deadlock reasoning |
+| pure-method-no-side-effects | `@Pure` method mutates state | purity via call graph |
+| lambda-captures-mutable-state | lambda mutates captured array | escape + capture analysis |
 
-## Step 0 — see the flow bugs
+## Step 0 — see them
 ```
-$ rulesmith lint --rules $TEN examples/java
-... 12 findings (the ten rules; guarded-by fires on two accesses)
-```
-Each finding's `= note:` states the graph fact (post-dominance, dominance,
-definite-assignment) — deterministic, reproducible.
-
-## Step 1 — repair the flow, not the syntax
-`examples/java-fixed/PaymentGateway.java` is the same code with the control flow
-fixed: try-with-resources, orElse, a dominating instanceof, synchronized access,
-StringBuilder, no else-after-return.
-```
-$ rulesmith lint --rules $TEN examples/java-fixed
-0 finding(s)
+$ rulesmith lint --rules $FIVE examples/java
+warning[builder-terminal-before-setters]: 'b' finalized by build() before setter total()
+warning[guarded-by-lock-held]: @GuardedBy field 'balance' read without the lock
+warning[blocking-call-while-holding-lock]: fut.get() blocks while holding a lock
+warning[pure-method-no-side-effects]: @Pure method calls a mutating method
+warning[lambda-captures-mutable-state]: lambda mutates captured array 'acc'
+5 findings
 ```
 
-The verdict flipped on the **flow**. A CLAUDE.md rule sees near-identical code in
-both files and can't tell them apart — that's the value RuleSmith adds that you
-can't abstract away with "just put it in CLAUDE.md."
+## Step 1 — repair the design, not the syntax
+```
+$ rulesmith lint --rules $FIVE examples/java-fixed
+0 findings
+```
+
+Setters before build(); field read under its lock; Future resolved outside the
+monitor; a genuinely pure method; a fold instead of a mutating closure. These are
+design-level fixes — exactly what a prose CLAUDE.md rule can describe but never
+enforce.
+
+## Want the differentiated checks on real code?
+See `examples/real-world/` and `demo/NOTES.md` — e.g. a genuine
+`atomic-get-set-race` (`textBB.set(textBB.get()==null?…)`) caught in production.

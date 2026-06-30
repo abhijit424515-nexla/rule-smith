@@ -1,90 +1,51 @@
 package examples;
 
-import java.io.InputStream;
-import java.util.Map;
-import java.util.Optional;
+import java.util.List;
+import java.util.concurrent.Future;
+import java.util.concurrent.locks.ReentrantLock;
 import javax.annotation.concurrent.GuardedBy;
 
-// Every method here is syntactically ordinary. The defect lives in the CONTROL
-// or DATA FLOW -- the same tokens are a bug on one path and correct on another.
-// A flat "always close streams / always guard Optional / lock shared state"
-// rule pasted into CLAUDE.md cannot see the difference. RuleSmith can, because
-// each check runs a real CFG + dominance / post-dominance analysis.
+// Five defects that standard linters (SonarQube/PMD) do not flag — typestate,
+// purity, lock-dominance, deadlock risk, and closure capture. Each needs real
+// flow/semantic reasoning, not a syntax pattern.
 public class PaymentGateway {
 
-  @GuardedBy("this")
-  private long retries; // shared mutable state
+  private final ReentrantLock lock = new ReentrantLock();
 
-  private final String region;
+  @GuardedBy("lock")
+  private int balance;
 
-  // (1) field-read-before-assign: this.region read before it is assigned
-  PaymentGateway(String r) {
-    int n = this.region.length();
-    this.region = r;
+  // (1) builder-terminal-before-setters — typestate: setter runs AFTER build()
+  Receipt issue(String customer) {
+    Receipt.Builder b = Receipt.builder();
+    b.customer(customer);
+    Receipt r = b.build();
+    b.total(100); // <-- mutating a builder already finalized by build()
+    return r;
   }
 
-  // (2) resource-leak: close() is present but an early return skips it
-  void pull(boolean dryRun) {
-    InputStream in = open();
-    if (dryRun) {
-      return;
-    }
-    in.close();
+  // (2) pure-method-no-side-effects — @Pure method mutates its argument
+  @Pure
+  void collect(List<String> out) {
+    out.add("entry"); // side effect in a method declared pure
   }
 
-  // (3) optional-get-without-ispresent: get() not dominated by isPresent()
-  String account(long id) {
-    Optional<String> acct = lookup(id);
-    return acct.get();
+  // (3) guarded-by-lock-held — @GuardedBy field read without holding the lock
+  int currentBalance() {
+    return balance; // no lock acquired
   }
 
-  // (4) null-deref-needs-dominating-guard: guard misses one path to the deref
-  int tokenLength(Map<String, String> m, String k) {
-    String s = null;
-    if (m.containsKey(k)) {
-      s = m.get(k);
-    }
-    return s.length();
+  // (4) blocking-call-while-holding-lock — Future.get() inside synchronized
+  synchronized String awaitSettlement(Future<String> task) throws Exception {
+    Future<String> fut = task;
+    return fut.get(); // blocks the monitor; classic deadlock setup
   }
 
-  // (5) unchecked-downcast: cast not guarded by a dominating instanceof
-  String describe(Object o) {
-    return ((String) o).trim();
-  }
-
-  // (6) non-atomic-shared-update: read-modify-write on @GuardedBy field
-  void bump() {
-    retries = retries + 1;
-  }
-
-  // (7) guarded-by-lock-held: @GuardedBy field read without holding the lock
-  long readRetries() {
-    return retries;
-  }
-
-  // (8) no-string-concat-in-loop: O(n^2) string building
-  String join(String[] parts) {
-    String out = "";
-    for (String p : parts) {
-      out += p;
-    }
-    return out;
-  }
-
-  // (9) no-superfluous-else: else after a branch that always returns
-  String classify(int code) {
-    if (code < 0) {
-      return "neg";
-    } else {
-      return "nonneg";
-    }
-  }
-
-  InputStream open() {
-    return null;
-  }
-
-  Optional<String> lookup(long id) {
-    return Optional.empty();
+  // (5) lambda-captures-mutable-state — closure mutates captured array
+  int sum(int[] amounts) {
+    int[] acc = new int[1];
+    Runnable r = () -> acc[0] += amounts.length;
+    r.run();
+    return acc[0];
   }
 }

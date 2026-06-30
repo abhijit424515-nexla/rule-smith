@@ -1,91 +1,53 @@
 package examples;
 
-import java.io.InputStream;
-import java.util.Map;
-import java.util.Optional;
+import java.util.List;
+import java.util.concurrent.Future;
+import java.util.concurrent.locks.ReentrantLock;
 import javax.annotation.concurrent.GuardedBy;
 
-// Same code, every control/data-flow defect repaired. RuleSmith now reports
-// zero findings for the ten flow-sensitive rules.
+// The same five defects, repaired. RuleSmith reports zero for the power-five.
 public class PaymentGateway {
 
-  @GuardedBy("this")
-  private long retries = 0;
+  private final ReentrantLock lock = new ReentrantLock();
 
-  private final String region;
+  @GuardedBy("lock")
+  private int balance;
 
-  // (1) assign before any read; field definitely assigned on the only path
-  PaymentGateway(String r) {
-    this.region = r;
+  // (1) all setters run before the terminal build()
+  Receipt issue(String customer) {
+    Receipt.Builder b = Receipt.builder();
+    b.customer(customer);
+    b.total(100);
+    return b.build();
   }
 
-  // (2) try-with-resources closes on every exit, dry-run or not
-  void pull(boolean dryRun) {
-    try (InputStream in = open()) {
-      if (dryRun) {
-        return;
-      }
-      use(in);
-    } catch (Exception e) {
-      throw new RuntimeException(e);
+  // (2) pure method computes a value with no mutation at all
+  @Pure
+  int collectedCount(List<String> in) {
+    return in.size() + 1;
+  }
+
+  // (3) guarded field read under its lock
+  int currentBalance() {
+    lock.lock();
+    try {
+      return balance;
+    } finally {
+      lock.unlock();
     }
   }
 
-  // (3) orElse instead of an unguarded get()
-  String account(long id) {
-    return lookup(id).orElse("unknown");
+  // (4) resolve the Future outside the monitor
+  String awaitSettlement(Future<String> task) throws Exception {
+    return task.get();
   }
 
-  // (4) deref only on the path where the value is present
-  int tokenLength(Map<String, String> m, String k) {
-    if (m.containsKey(k)) {
-      return m.get(k).length();
+  // (5) no captured mutable state — fold over the input
+  int sum(int[] amounts) {
+    int acc = 0;
+    for (int a : amounts) {
+      acc += a;
     }
-    return 0;
-  }
-
-  // (5) cast guarded by a dominating instanceof
-  String describe(Object o) {
-    if (o instanceof String) {
-      return ((String) o).trim();
-    }
-    return "";
-  }
-
-  // (6) compound update under the monitor
-  synchronized void bump() {
-    retries = retries + 1;
-  }
-
-  // (7) read under the same lock
-  synchronized long readRetries() {
-    return retries;
-  }
-
-  // (8) StringBuilder, linear
-  String join(String[] parts) {
-    StringBuilder out = new StringBuilder();
-    for (String p : parts) {
-      out.append(p);
-    }
-    return out.toString();
-  }
-
-  // (9) no else after a returning branch
-  String classify(int code) {
-    if (code < 0) {
-      return "neg";
-    }
-    return "nonneg";
-  }
-
-  InputStream open() {
-    return null;
-  }
-
-  void use(InputStream in) {}
-
-  Optional<String> lookup(long id) {
-    return Optional.empty();
+    return acc;
   }
 }

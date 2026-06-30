@@ -18,28 +18,25 @@ Effective Java, NASA's Power of Ten, OWASP, and the FP literature.
 
 ## Same code. Different flow. Opposite verdict.
 
+Real code from backend-connectors — a lost-update race a reviewer would skim past:
+
 ```java
-// examples/java/PaymentGateway.java          // examples/java-fixed/PaymentGateway.java
-InputStream in = open();                       try (InputStream in = open()) {
-if (dryRun) return;   // <-- leaks 'in'          if (dryRun) return;   // closed anyway
-in.close();                                      use(in);
-                                               }
+// the bug                                    // the fix
+textBB.set(textBB.get() == null              textBB.updateAndGet(cur ->
+    ? init() : merge(textBB.get()));            cur == null ? init() : merge(cur));
 ```
 
 ```console
-$ rulesmith lint --rules resource-leak examples/java
-warning[resource-leak]: `in` (InputStream) is never closed
-  --> PaymentGateway.java:30
-   = note: close() is on no path (post-dominance); resource does not escape
-   = help: use try-with-resources
-
-$ rulesmith lint --rules resource-leak examples/java-fixed
-0 findings
+$ rulesmith lint --rules atomic-get-set-race .../pdf/strategy/DefaultStrategy.java
+warning[atomic-get-set-race]: Non-atomic get-then-set on Atomic 'textBB' loses concurrent updates.
+  --> DefaultStrategy.java:69
+   = note: value passed to set() is computed from get(); another thread can update between
+   = help: use textBB.updateAndGet(...) or compareAndSet(...)
 ```
 
-A `CLAUDE.md` rule sees near-identical code in both files and can't tell them apart.
-RuleSmith's verdict flipped on the **flow**, not the syntax. That's the value you
-can't vibe out of a sentence.
+A `CLAUDE.md` rule — and SonarQube — can't express this. It needs to see that the
+value written back is **derived from a prior read of the same atomic**. That's
+dataflow, not pattern-matching. The value you can't vibe out of a sentence.
 
 ## It finds real bugs, in shipped code
 
@@ -115,8 +112,9 @@ secrets, broken trust managers), complexity metrics, and naming. Highlights — 
 flow-sensitive ones no text rule can see:
 
 `resource-leak` · `optional-get-without-ispresent` · `null-deref-needs-dominating-guard`
-· `unchecked-downcast` · `field-read-before-assign` · `non-atomic-shared-update`
-· `guarded-by-lock-held` · `constructor-definite-assignment`
+· `builder-terminal-before-setters` (typestate) · `atomic-get-set-race` ·
+`pure-method-no-side-effects` · `guarded-by-lock-held` · `command-query-separation` ·
+`tell-dont-ask` · `blocking-call-while-holding-lock` · `lambda-captures-mutable-state`
 
 See `examples/real-world/` for five unmodified backend-connectors files, each
 lighting up 13–15 rules.
