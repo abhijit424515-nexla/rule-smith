@@ -17,7 +17,7 @@ style: |
   .terminal { background: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 12px; overflow: hidden; font-family: 'Courier New', monospace; font-size: 0.62em; margin-top: 14px; }
   .tbar { background: #111; padding: 8px 14px; display: flex; gap: 6px; align-items: center; }
   .dot { width: 10px; height: 10px; border-radius: 50%; }
-  .tbody { padding: 16px 20px; line-height: 1.7; }
+  .tbody { padding: 16px 20px; line-height: 1.7; white-space: normal; overflow-wrap: anywhere; }
   .prompt { color: #ff6b1a; } .out { color: #777; } .ok { color: #22c55e; } .warn { color: #f5a623; } .bad { color: #ef4444; }
   .card { background: #080808; border: 1px solid #141414; border-radius: 10px; padding: 14px 18px; }
   .big { font-family: 'Outfit'; font-weight: 800; font-size: 2em; color: #fff; }
@@ -71,18 +71,18 @@ either** — and you certainly can't vibe them out of a sentence.
 
 `examples/java/PaymentGateway.java` — five defects no syntax rule can see.
 
-<div class="terminal">
+<div class="terminal" style="font-size:0.5em">
 <div class="tbar"><div class="dot" style="background:#ff5f56"></div><div class="dot" style="background:#ffbd2e"></div><div class="dot" style="background:#27c93f"></div></div>
 <div class="tbody">
-<span class="prompt">$</span> rulesmith lint --rules $FIVE examples/java<br/>
-<span class="warn">warning[builder-terminal-before-setters]</span>: 'b' finalized by build() before setter total()<br/>
-<span class="warn">warning[guarded-by-lock-held]</span>: @GuardedBy field 'balance' read without the lock<br/>
-<span class="warn">warning[blocking-call-while-holding-lock]</span>: fut.get() blocks while holding a lock<br/>
-<span class="warn">warning[pure-method-no-side-effects]</span>: @Pure method calls a mutating method<br/>
-<span class="warn">warning[lambda-captures-mutable-state]</span>: lambda mutates captured array 'acc'<br/>
-<span class="bad">5 findings</span><br/><br/>
+<span class="prompt">$</span> rulesmith lint --rules $FIVE examples/java | grep warning<br/>
+<span class="warn">warning[blocking-call-while-holding-lock]</span>: Blocking/long-running call fut.get() blocks until the Future completes while holding a lock.<br/>
+<span class="warn">warning[builder-terminal-before-setters]</span>: Builder &#x27;b&#x27; is finalized by &#x27;build()&#x27; before setter &#x27;total()&#x27; runs on it.<br/>
+<span class="warn">warning[guarded-by-lock-held]</span>: Access to @GuardedBy(&quot;lock&quot;) field &#x27;balance&#x27; without holding lock lock.<br/>
+<span class="warn">warning[lambda-captures-mutable-state]</span>: Lambda mutates captured array &#x27;acc&#x27;.<br/>
+<span class="warn">warning[pure-method-no-side-effects]</span>: pure method calls a known-impure (mutating) method<br/>
+&nbsp;<br/>
 <span class="prompt">$</span> rulesmith lint --rules $FIVE examples/java-fixed<br/>
-<span class="ok">0 findings</span>
+<span class="ok">0 finding(s) across 1 file(s).</span>
 </div>
 </div>
 
@@ -128,15 +128,18 @@ every linter ships. These need a real CFG, call graph, and dataflow.
 
 # A concurrency race in shipped code
 
-<div class="terminal">
+<div class="terminal" style="font-size:0.5em">
 <div class="tbar"><div class="dot" style="background:#ff5f56"></div><div class="dot" style="background:#ffbd2e"></div><div class="dot" style="background:#27c93f"></div></div>
 <div class="tbody">
-<span class="prompt">$</span> rulesmith lint --rules atomic-get-set-race .../pdf/strategy/DefaultStrategy.java<br/><br/>
-<span class="warn">warning[atomic-get-set-race]</span>: Non-atomic get-then-set on Atomic 'textBB' loses concurrent updates.<br/>
-<span class="out">  --> DefaultStrategy.java:69</span><br/>
-<span class="out">   = note: value passed to textBB.set(...) is computed from textBB.get();</span><br/>
-<span class="out">     another thread can update between the get and the set.</span><br/>
-<span class="out">   = help: use textBB.updateAndGet(...) or compareAndSet(...)</span>
+<span class="prompt">$</span> rulesmith lint --rules atomic-get-set-race \<br/>
+<span class="out">&nbsp;&nbsp;&nbsp;&nbsp;$BC/parsers/src/main/java/com/nexla/parser/pdf/strategy/DefaultStrategy.java</span><br/>
+<span class="warn">warning[atomic-get-set-race]</span>: Non-atomic get-then-set on Atomic &#x27;textBB&#x27; loses concurrent updates.<br/>
+<span class="out">  --&gt; $BC/parsers/src/main/java/com/nexla/parser/pdf/strategy/DefaultStrategy.java:69:13</span><br/>
+<span class="out">   = note: value passed to textBB.set(...) is computed from textBB.get(); another thread can update between the get and the set.</span><br/>
+<span class="out">   = help: Replace with textBB.compareAndSet(...), textBB.updateAndGet(...), or incrementAndGet()/getAndAdd().</span><br/>
+<span class="out">   = see:  https://rules.smith.dev/atomic-get-set-race</span><br/>
+&nbsp;<br/>
+<span class="out">... (1 more)</span>
 </div>
 </div>
 
@@ -191,14 +194,15 @@ way.
 
 # Filters its own false positives
 
-<div class="terminal">
+<div class="terminal" style="font-size:0.5em">
 <div class="tbar"><div class="dot" style="background:#ff5f56"></div><div class="dot" style="background:#ffbd2e"></div><div class="dot" style="background:#27c93f"></div></div>
 <div class="tbody">
-<span class="prompt">$</span> rulesmith lint --rules resource-leak --judge .../IcebergSourceTask.java<br/><br/>
-<span class="out">1 finding filtered as false positive by the judge:</span><br/>
-<span class="out">  filtered[resource-leak] IcebergSourceTask.java:101: `reader` never closed</span><br/>
-<span class="ok">   = judge: OffsetStorageReader is framework-managed; Kafka Connect</span><br/>
-<span class="ok">     handles the lifecycle</span>
+<span class="prompt">$</span> rulesmith lint --rules resource-leak --judge \<br/>
+<span class="out">&nbsp;&nbsp;&nbsp;&nbsp;$BC/kafka-connect-iceberg-source/src/main/java/com/nexla/connector/iceberg/source/IcebergSourceTask.java</span><br/>
+<span class="out">1 finding(s) filtered as false positives by the judge:</span><br/>
+<span class="out">  filtered[resource-leak] $BC/kafka-connect-iceberg-source/src/main/java/com/nexla/connector/iceberg/source/IcebergSourceTask.java:101: `reader` (OffsetStorageReader) is never closed</span><br/>
+<span class="out">     = judge: not a real issue -- OffsetStorageReader is framework-managed (obtained from context object); Kafka Connect framework handles lifecycle, connector code should not close it.</span><br/>
+<span class="out">0 finding(s) across 1 file(s).</span>
 </div>
 </div>
 
@@ -213,12 +217,13 @@ verdict is cached** by `(rule, snippet)` so it's reproducible.
 
 # Safe autofix, the rest suggested
 
-<div class="terminal">
+<div class="terminal" style="font-size:0.5em">
 <div class="tbar"><div class="dot" style="background:#ff5f56"></div><div class="dot" style="background:#ffbd2e"></div><div class="dot" style="background:#27c93f"></div></div>
 <div class="tbody">
-<span class="prompt">$</span> rulesmith lint --fix --dry-run --rules resource-leak .../OneDriveConnectorService.java<br/><br/>
-<span class="out">would fix: 2 resource(s) wrapped in try-with-resources</span><br/>
-<span class="ok">2 auto-fixed</span>, <span class="warn">1 needs manual handling (suggest-only)</span>
+<span class="prompt">$</span> rulesmith lint --fix --dry-run --rules resource-leak \<br/>
+<span class="out">&nbsp;&nbsp;&nbsp;&nbsp;$BC/one-drive-probe-service/src/main/java/com/nexla/probe/onedrive/OneDriveConnectorService.java</span><br/>
+<span class="out">would fix $BC/one-drive-probe-service/src/main/java/com/nexla/probe/onedrive/OneDriveConnectorService.java: 2 resource(s) wrapped in try-with-resources</span><br/>
+<span class="out">2 auto-fixed, 1 need manual handling (suggest-only).</span>
 </div>
 </div>
 
@@ -252,13 +257,18 @@ checks SonarQube doesn't run, firing on shipped code.
 
 <span class="tag" style="background:#ef444412; color:#ef4444; border:1px solid #ef444422;">parsers · DefaultStrategy.java:69</span>
 
-<div class="terminal">
+<div class="terminal" style="font-size:0.5em">
 <div class="tbar"><div class="dot" style="background:#ff5f56"></div><div class="dot" style="background:#ffbd2e"></div><div class="dot" style="background:#27c93f"></div></div>
 <div class="tbody">
-<span class="prompt">$</span> rulesmith lint --rules atomic-get-set-race examples/real-world/... <br/>
-<span class="warn">warning[atomic-get-set-race]</span>: Non-atomic get-then-set on Atomic 'textBB' loses concurrent updates.<br/>
-<span class="out">  --> DefaultStrategy.java:69</span><br/>
-<span class="out">   = note: value passed to set() is computed from get(); a thread can update between</span>
+<span class="prompt">$</span> rulesmith lint --rules atomic-get-set-race \<br/>
+<span class="out">&nbsp;&nbsp;&nbsp;&nbsp;$BC/parsers/src/main/java/com/nexla/parser/pdf/strategy/DefaultStrategy.java</span><br/>
+<span class="warn">warning[atomic-get-set-race]</span>: Non-atomic get-then-set on Atomic &#x27;textBB&#x27; loses concurrent updates.<br/>
+<span class="out">  --&gt; $BC/parsers/src/main/java/com/nexla/parser/pdf/strategy/DefaultStrategy.java:69:13</span><br/>
+<span class="out">   = note: value passed to textBB.set(...) is computed from textBB.get(); another thread can update between the get and the set.</span><br/>
+<span class="out">   = help: Replace with textBB.compareAndSet(...), textBB.updateAndGet(...), or incrementAndGet()/getAndAdd().</span><br/>
+<span class="out">   = see:  https://rules.smith.dev/atomic-get-set-race</span><br/>
+&nbsp;<br/>
+<span class="out">... (1 more)</span>
 </div>
 </div>
 
@@ -274,13 +284,20 @@ A lost-update race a code reviewer would miss and a prose rule cannot express.
 
 <span class="tag" style="background:#f5a62312; color:#f5a623; border:1px solid #f5a62322;">ftp-probe · FtpClientImpl.java:337</span>
 
-<div class="terminal">
+<div class="terminal" style="font-size:0.5em">
 <div class="tbar"><div class="dot" style="background:#ff5f56"></div><div class="dot" style="background:#ffbd2e"></div><div class="dot" style="background:#27c93f"></div></div>
 <div class="tbody">
-<span class="prompt">$</span> rulesmith lint --rules tell-dont-ask .../FtpClientImpl.java<br/>
-<span class="warn">warning[tell-dont-ask]</span>: decide on nextReportTime.get() then nextReportTime.set() outside the object.<br/>
-<span class="out">  --> FtpClientImpl.java:337</span><br/>
-<span class="out">   = note: if (currentTime > nextReportTime.get()) { ... nextReportTime.set(...) }</span>
+<span class="prompt">$</span> rulesmith lint --rules tell-dont-ask \<br/>
+<span class="out">&nbsp;&nbsp;&nbsp;&nbsp;$BC/ftp-probe-service/src/main/java/com/nexla/probe/ftp/impl/FtpClientImpl.java</span><br/>
+<span class="warn">warning[tell-dont-ask]</span>: Tell-don&#x27;t-ask: decide on nextReportTime.get() then nextReportTime.set() outside the object.<br/>
+<span class="out">  --&gt; $BC/ftp-probe-service/src/main/java/com/nexla/probe/ftp/impl/FtpClientImpl.java:337:7</span><br/>
+<span class="out">   = note: if (currentTime &gt; nextReportTime.get()) {</span><br/>
+<span class="out">        logger.info(&quot;FTP: downloaded: {}&quot;, readableFileSize(totalBytesTransferred));</span><br/>
+<span class="out">        nextReportTime.set(currentTime + REPORT_INTERVAL);</span><br/>
+<span class="out">      }</span><br/>
+<span class="out">   = help: Move this get/check/set into a method on nextReportTime.</span><br/>
+<span class="out">   = see:  https://rules.smith.dev/tell-dont-ask</span><br/>
+&nbsp;
 </div>
 </div>
 
@@ -296,13 +313,21 @@ Get-state-then-mutate from outside — the decision belongs *inside* the object.
 
 <span class="tag" style="background:#f5a62312; color:#f5a623; border:1px solid #f5a62322;">ftp-probe · FtpConnectorService.java:415</span>
 
-<div class="terminal">
+<div class="terminal" style="font-size:0.5em">
 <div class="tbar"><div class="dot" style="background:#ff5f56"></div><div class="dot" style="background:#ffbd2e"></div><div class="dot" style="background:#27c93f"></div></div>
 <div class="tbody">
-<span class="prompt">$</span> rulesmith lint --rules local-throw-catch-control-flow .../FtpConnectorService.java<br/>
-<span class="warn">warning[local-throw-catch-control-flow]</span>: 'IllegalStateException' thrown and caught locally in the same method,<br/>
-<span class="warn">  steering control flow instead of signaling a fault.</span><br/>
-<span class="out">  --> FtpConnectorService.java:415</span>
+<span class="prompt">$</span> rulesmith lint --rules local-throw-catch-control-flow \<br/>
+<span class="out">&nbsp;&nbsp;&nbsp;&nbsp;$BC/ftp-probe-service/src/main/java/com/nexla/probe/ftp/FtpConnectorService.java</span><br/>
+<span class="warn">warning[local-throw-catch-control-flow]</span>: Exception &#x27;IllegalStateException&#x27; is thrown and caught locally in the same method, steering control flow instead of signaling a fault.<br/>
+<span class="out">  --&gt; $BC/ftp-probe-service/src/main/java/com/nexla/probe/ftp/FtpConnectorService.java:415:17</span><br/>
+<span class="out">   = note: throw new IllegalStateException(</span><br/>
+<span class="out">                    &quot;Move failed: destination size mismatch after copy. Expected: &quot;</span><br/>
+<span class="out">                        + srcSize</span><br/>
+<span class="out">                        + &quot;, got: &quot;</span><br/>
+<span class="out">                        + newDestSize);</span><br/>
+<span class="out">   = help: Use a normal control-flow construct (return, break, a flag, or a helper method) instead of throwing an exception you catch yourself.</span><br/>
+<span class="out">   = see:  https://rules.smith.dev/local-throw-catch-control-flow</span><br/>
+&nbsp;
 </div>
 </div>
 
@@ -318,13 +343,17 @@ Exception used as a goto — `throw` post-dominated by its own `catch`.
 
 <span class="tag" style="background:#f5a62312; color:#f5a623; border:1px solid #f5a62322;">ftp-probe · FtpClientImpl.java:72</span>
 
-<div class="terminal">
+<div class="terminal" style="font-size:0.5em">
 <div class="tbar"><div class="dot" style="background:#ff5f56"></div><div class="dot" style="background:#ffbd2e"></div><div class="dot" style="background:#27c93f"></div></div>
 <div class="tbody">
-<span class="prompt">$</span> rulesmith lint --rules command-query-separation .../FtpClientImpl.java<br/>
-<span class="warn">warning[command-query-separation]</span>: Method 'create' returns a value and also mutates observable state.<br/>
-<span class="out">  --> FtpClientImpl.java:72</span><br/>
-<span class="out">   = help: split into a void command and a side-effect-free query</span>
+<span class="prompt">$</span> rulesmith lint --rules command-query-separation \<br/>
+<span class="out">&nbsp;&nbsp;&nbsp;&nbsp;$BC/ftp-probe-service/src/main/java/com/nexla/probe/ftp/impl/FtpClientImpl.java</span><br/>
+<span class="warn">warning[command-query-separation]</span>: Method &#x27;create&#x27; returns a value and also mutates observable state (command/query mixed).<br/>
+<span class="out">  --&gt; $BC/ftp-probe-service/src/main/java/com/nexla/probe/ftp/impl/FtpClientImpl.java:72:7</span><br/>
+<span class="out">   = note: ftpClient = FTPS.equals(authConfig.ftpType) ? new FTPSClient() : new FTPClient()</span><br/>
+<span class="out">   = help: Split into a void command that changes state and a side-effect-free query that returns the value.</span><br/>
+<span class="out">   = see:  https://rules.smith.dev/command-query-separation</span><br/>
+&nbsp;
 </div>
 </div>
 
@@ -340,13 +369,18 @@ A query that secretly mutates — the bug class CQS exists to prevent.
 
 <span class="tag" style="background:#ef444412; color:#ef4444; border:1px solid #ef444422;">one-drive · OneDriveConnectorService.java:392</span>
 
-<div class="terminal">
+<div class="terminal" style="font-size:0.5em">
 <div class="tbar"><div class="dot" style="background:#ff5f56"></div><div class="dot" style="background:#ffbd2e"></div><div class="dot" style="background:#27c93f"></div></div>
 <div class="tbody">
-<span class="prompt">$</span> rulesmith lint --rules resource-leak .../OneDriveConnectorService.java<br/>
+<span class="prompt">$</span> rulesmith lint --rules resource-leak \<br/>
+<span class="out">&nbsp;&nbsp;&nbsp;&nbsp;$BC/one-drive-probe-service/src/main/java/com/nexla/probe/onedrive/OneDriveConnectorService.java</span><br/>
 <span class="warn">warning[resource-leak]</span>: `outputStream` (OutputStream) is never closed<br/>
-<span class="out">  --> OneDriveConnectorService.java:392</span><br/>
-<span class="out">   = note: no close() call found and the resource does not escape the method</span>
+<span class="out">  --&gt; $BC/one-drive-probe-service/src/main/java/com/nexla/probe/onedrive/OneDriveConnectorService.java:392:5</span><br/>
+<span class="out">   = note: no close() call found and the resource does not escape the method</span><br/>
+<span class="out">   = help: close it in a finally block, or use try-with-resources: try (OutputStream outputStream = ...) { ... }</span><br/>
+<span class="out">   = see:  https://rules.smith.dev/resource-leak</span><br/>
+&nbsp;<br/>
+<span class="out">... (1 more)</span>
 </div>
 </div>
 

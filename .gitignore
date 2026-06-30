@@ -5,3 +5,5 @@ __pycache__/
 .rulesmith_cache.json
 *.egg-info/
 build/
+demo/NOTES.pdf
+demo/NOTES.pptx
