@@ -14,7 +14,7 @@ style: |
   ul { margin-top: 6px; } li { margin: 5px 0; color: #aaa; }
   section::after { font-family: 'Outfit'; font-size: 0.5em; color: #222; }
   section.lead { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
-  .terminal { background: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 12px; overflow: hidden; font-family: 'Courier New', monospace; font-size: 0.62em; margin-top: 14px; }
+  .terminal { background: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 12px; overflow: hidden; font-family: 'Courier New', monospace; font-size: 0.7em; margin-top: 14px; }
   .tbar { background: #111; padding: 8px 14px; display: flex; gap: 6px; align-items: center; }
   .dot { width: 10px; height: 10px; border-radius: 50%; }
   .tbody { padding: 16px 20px; line-height: 1.7; white-space: normal; overflow-wrap: anywhere; }
@@ -71,7 +71,7 @@ either** — and you certainly can't vibe them out of a sentence.
 
 `examples/java/PaymentGateway.java` — five defects no syntax rule can see.
 
-<div class="terminal" style="font-size:0.5em">
+<div class="terminal" style="font-size:0.58em">
 <div class="tbar"><div class="dot" style="background:#ff5f56"></div><div class="dot" style="background:#ffbd2e"></div><div class="dot" style="background:#27c93f"></div></div>
 <div class="tbody">
 <span class="prompt">$</span> rulesmith lint --rules $FIVE examples/java | grep warning<br/>
@@ -128,7 +128,7 @@ every linter ships. These need a real CFG, call graph, and dataflow.
 
 # A concurrency race in shipped code
 
-<div class="terminal" style="font-size:0.5em">
+<div class="terminal" style="font-size:0.58em">
 <div class="tbar"><div class="dot" style="background:#ff5f56"></div><div class="dot" style="background:#ffbd2e"></div><div class="dot" style="background:#27c93f"></div></div>
 <div class="tbody">
 <span class="prompt">$</span> rulesmith lint --rules atomic-get-set-race \<br/>
@@ -194,7 +194,7 @@ way.
 
 # Filters its own false positives
 
-<div class="terminal" style="font-size:0.5em">
+<div class="terminal" style="font-size:0.58em">
 <div class="tbar"><div class="dot" style="background:#ff5f56"></div><div class="dot" style="background:#ffbd2e"></div><div class="dot" style="background:#27c93f"></div></div>
 <div class="tbody">
 <span class="prompt">$</span> rulesmith lint --rules resource-leak --judge \<br/>
@@ -217,7 +217,7 @@ verdict is cached** by `(rule, snippet)` so it's reproducible.
 
 # Safe autofix, the rest suggested
 
-<div class="terminal" style="font-size:0.5em">
+<div class="terminal" style="font-size:0.58em">
 <div class="tbar"><div class="dot" style="background:#ff5f56"></div><div class="dot" style="background:#ffbd2e"></div><div class="dot" style="background:#27c93f"></div></div>
 <div class="tbody">
 <span class="prompt">$</span> rulesmith lint --fix --dry-run --rules resource-leak \<br/>
@@ -258,7 +258,7 @@ checks SonarQube doesn't run, firing on shipped code.
 
 <span class="tag" style="background:#ef444412; color:#ef4444; border:1px solid #ef444422;">parsers · DefaultStrategy.java:69</span>
 
-<div class="terminal" style="font-size:0.5em">
+<div class="terminal" style="font-size:0.58em">
 <div class="tbar"><div class="dot" style="background:#ff5f56"></div><div class="dot" style="background:#ffbd2e"></div><div class="dot" style="background:#27c93f"></div></div>
 <div class="tbody">
 <span class="prompt">$</span> rulesmith lint --rules atomic-get-set-race \<br/>
@@ -285,7 +285,7 @@ A lost-update race a code reviewer would miss and a prose rule cannot express.
 
 <span class="tag" style="background:#f5a62312; color:#f5a623; border:1px solid #f5a62322;">ftp-probe · FtpClientImpl.java:337</span>
 
-<div class="terminal" style="font-size:0.5em">
+<div class="terminal" style="font-size:0.58em">
 <div class="tbar"><div class="dot" style="background:#ff5f56"></div><div class="dot" style="background:#ffbd2e"></div><div class="dot" style="background:#27c93f"></div></div>
 <div class="tbody">
 <span class="prompt">$</span> rulesmith lint --rules tell-dont-ask \<br/>
@@ -314,7 +314,7 @@ Get-state-then-mutate from outside — the decision belongs *inside* the object.
 
 <span class="tag" style="background:#f5a62312; color:#f5a623; border:1px solid #f5a62322;">ftp-probe · FtpConnectorService.java:415</span>
 
-<div class="terminal" style="font-size:0.5em">
+<div class="terminal" style="font-size:0.58em">
 <div class="tbar"><div class="dot" style="background:#ff5f56"></div><div class="dot" style="background:#ffbd2e"></div><div class="dot" style="background:#27c93f"></div></div>
 <div class="tbody">
 <span class="prompt">$</span> rulesmith lint --rules local-throw-catch-control-flow \<br/>
@@ -344,7 +344,7 @@ Exception used as a goto — `throw` post-dominated by its own `catch`.
 
 <span class="tag" style="background:#f5a62312; color:#f5a623; border:1px solid #f5a62322;">ftp-probe · FtpClientImpl.java:72</span>
 
-<div class="terminal" style="font-size:0.5em">
+<div class="terminal" style="font-size:0.58em">
 <div class="tbar"><div class="dot" style="background:#ff5f56"></div><div class="dot" style="background:#ffbd2e"></div><div class="dot" style="background:#27c93f"></div></div>
 <div class="tbody">
 <span class="prompt">$</span> rulesmith lint --rules command-query-separation \<br/>
@@ -370,7 +370,7 @@ A query that secretly mutates — the bug class CQS exists to prevent.
 
 <span class="tag" style="background:#ef444412; color:#ef4444; border:1px solid #ef444422;">one-drive · OneDriveConnectorService.java:392</span>
 
-<div class="terminal" style="font-size:0.5em">
+<div class="terminal" style="font-size:0.58em">
 <div class="tbar"><div class="dot" style="background:#ff5f56"></div><div class="dot" style="background:#ffbd2e"></div><div class="dot" style="background:#27c93f"></div></div>
 <div class="tbody">
 <span class="prompt">$</span> rulesmith lint --rules resource-leak \<br/>
