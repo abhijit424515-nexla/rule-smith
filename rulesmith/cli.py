@@ -123,7 +123,14 @@ def cmd_lint(args):
         from rulesmith import judge as judgemod
 
         judgemod.save_cache(_cache)
-        print(f"{len(filtered)} finding(s) filtered as false positives by the judge.")
+        if filtered:
+            print(
+                f"\n{len(filtered)} finding(s) filtered as false positives by the judge:"
+            )
+            for rel, fd, reason in filtered:
+                print(f"  filtered[{fd['rule']}] {rel}:{fd['line']}: {fd['message']}")
+                print(f"     = judge: not a real issue -- {reason}")
+            print()
     print(f"{total} finding(s) across {len(files)} file(s).")
     return 1 if total else 0
 

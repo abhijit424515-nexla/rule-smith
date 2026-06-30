@@ -71,10 +71,48 @@ Claude adjudicates the residual, verdict cached so it's reproducible.
 
 ## Beat 5 — fix it (45s)
 ```
-rulesmith lint --fix --dry-run $BC/<a-leak-file>.java
+rulesmith lint --fix --dry-run --rules resource-leak \
+  $BC/one-drive-probe-service/src/main/java/com/nexla/probe/onedrive/OneDriveConnectorService.java
 ```
-Show the try-with-resources rewrite. Only the provably-safe subset auto-fixes; the
-rest stays a suggestion. rustc-style help + doc link on every finding.
+Same file as Beat 2 -- the dry run shows 2 resources it would wrap in
+try-with-resources. Only the provably-safe subset auto-fixes; the rest stays a
+suggestion. rustc-style help + doc link on every finding.
+
+## Beat 6 — real production code, five files (90s)
+Not crafted demos -- five unmodified files from backend-connectors, vendored in
+`examples/real-world/` so the findings reproduce without the full repo.
+```
+rulesmith lint examples/real-world
+```
+Walk one slide per file. Each line below is a slide: file, what it is, the
+headline catch, and why a prose rule misses it.
+
+- **PineconeHelper.java** (vectordb probe) -- 28 findings / 14 rules.
+  Headline: `catch (Exception)` blocks that swallow failures from the Pinecone
+  client. A CLAUDE.md "handle errors properly" rule is unenforceable prose; the
+  `no-generic-catch` / `silent-catch-block` checks flag the exact sites.
+
+- **ExcelFileWriter.java** (parsers/writer) -- 62 findings / 13 rules.
+  Headline: a `StringWriter` opened and never closed. The `= note:` proves it via
+  post-dominance -- close() is on no path -- not by guessing from the variable name.
+
+- **TimestampModeProcessor.java** (jdbc source) -- 18 findings / 14 rules.
+  Headline: `result` dereferenced without a dominating null guard. This is the
+  canonical "looks fine line-by-line, NPE on one path" bug; only a CFG sees it.
+
+- **XmlUtils.java** (xml parser) -- 48 findings / 13 rules.
+  Headline: `(Map) el` downcast with no dominating instanceof -- a latent
+  ClassCastException. Dominance decides whether the guard actually covers the cast.
+
+- **SQLScriptExecutor.java** (script-runner) -- 80 findings / 15 rules.
+  Headline: 15 catch blocks that swallow or over-broaden exceptions
+  (`no-generic-catch`, `broad-exception-catch`, `silent-catch-block`). The kind of
+  systemic error-handling debt a rulebook describes but cannot count.
+
+Talking point: across five real files RuleSmith found leaks, NPE paths, unchecked
+casts, and swallowed exceptions -- deterministically, with a graph fact behind
+each. Use `--judge` here to show false-positive filtering on real code, and
+`--rules <id>` to isolate one check per slide.
 
 ## Close (30s)
 The argument, in one line: CLAUDE.md is a rulebook an LLM *reads*; RuleSmith is a
@@ -90,3 +128,4 @@ literature). Built on tree-sitter + CFG/dominance + claude -p. One CLI, no API k
 - Real leak: OneDriveConnectorService.java:516 `fileInput` (FileInputStream).
 - False positive filtered by --judge: IcebergSourceTask.java `reader` (OffsetStorageReader).
 - Walkthrough of a simpler messy file: `examples/WALKTHROUGH.md`.
+- Real production files (if asked "does it work on real code?"): `rulesmith lint examples/real-world` (5 files, 13-15 rules each).

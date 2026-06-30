@@ -103,6 +103,7 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 `examples/java-fixed/PaymentGateway.java` — same shapes, flow repaired (lints clean).
 `examples/WALKTHROUGH.md` — the before/after, rule by rule.
 `demo/NOTES.md` — demo-day script (why CLAUDE.md isn't enough).
+`examples/real-world/` — 4 unmodified production files (13-14 rules each).
 `workflows/github-action.yml` — CI gate template for any Java repo.
 
 ## Known limits (honest)

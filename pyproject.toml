@@ -1,0 +1,16 @@
+[project]
+name = "rulesmith"
+version = "0.1.0"
+description = "NL coding rules -> tested, AST-backed deterministic checks"
+requires-python = ">=3.9"
+dependencies = ["tree-sitter", "tree-sitter-java"]
+
+[project.scripts]
+rulesmith = "rulesmith.cli:main"
+
+[tool.setuptools]
+packages = ["rulesmith", "rules"]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
