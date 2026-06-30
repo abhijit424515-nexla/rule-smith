@@ -1,0 +1,24 @@
+# Install once:  pip install pre-commit && pre-commit install
+# Run on all:    pre-commit run --all-files
+#
+# Targets: Python 3.11 (see ruff.toml target-version), Java 17 (JDK the local
+# google-java-format binary runs under; gjf has no language-level flag).
+#
+# Python: ruff (pinned repo). Java: google-java-format via the locally installed
+# binary (brew install google-java-format) -- the bundled pretty-format-java hook
+# requires JDK 21+, so we call the system binary which works on the local JDK.
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.20
+    hooks:
+      - id: ruff-check      # lint
+        args: [--fix]
+      - id: ruff-format     # format
+
+  - repo: local
+    hooks:
+      - id: google-java-format
+        name: google-java-format
+        entry: google-java-format -i
+        language: system
+        types: [java]

@@ -59,7 +59,7 @@ Return JSON with this exact shape:
 }}
 Provide at least 2 violation fixtures and 2 clean fixtures. Keep the module \
 deterministic and small. Use the primitive API; never use regex on raw source for \
-structure. expect = number of findings analyze_source should return for that file."""
+structure. expect = number of findings analyze_source should return for that file. Each fixture's java MUST be a COMPLETE compilation unit (a full class with the snippet wrapped inside a method/class), never a bare method or statement snippet, so external formatters can parse it."""
 
 
 def _load(path):
