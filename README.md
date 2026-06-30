@@ -97,6 +97,13 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 .venv/bin/python -m rulesmith.cli add "<rule in plain English>"
 ```
 
+## Examples
+
+`examples/java/` — two messy files with 6 issues across all 6 rules.
+`examples/java-fixed/` — the same code after fixes (lints clean).
+`examples/WALKTHROUGH.md` — fixing them one rule at a time.
+`examples/github-action.yml` — CI gate template for any Java repo.
+
 ## Known limits (honest)
 - Resource detection is name-based (no type resolution) → false positives like
   `OffsetStorageReader`; Phase 5 judgment layer filters these.
