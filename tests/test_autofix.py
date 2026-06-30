@@ -1,9 +1,12 @@
-import os, sys
+import os
+import sys
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from rules.resource_leak import fix_edits, apply_edits, analyze_source
 from rulesmith.parse import parse
 
 FIX = os.path.join(os.path.dirname(__file__), "..", "fixtures", "resource_leak")
+
 
 def run():
     ok = True
@@ -27,6 +30,7 @@ def run():
 
     print("autofix:", "ALL PASS" if ok else "FAIL")
     return ok
+
 
 if __name__ == "__main__":
     sys.exit(0 if run() else 1)

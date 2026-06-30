@@ -8,7 +8,8 @@ Coverage: sequential stmts, if/else, while, for, enhanced-for, return, throw,
 break, continue, try/catch/finally. Exception model is coarse (see ponytail
 comments) -- exact enough for must-close / must-run-on-all-paths questions.
 """
-from .parse import parse, span, node_text
+
+from .parse import parse
 
 SIMPLE_FALLTHROUGH = None  # default: any unrecognized statement falls through
 
@@ -46,23 +47,31 @@ class CFG:
 
 class _Loop:
     def __init__(self, cont):
-        self.cont = cont       # continue target
-        self.breaks = []       # break nodes (route to loop exit)
+        self.cont = cont  # continue target
+        self.breaks = []  # break nodes (route to loop exit)
 
 
 class _Ctx:
     def __init__(self):
-        self.loops = []        # stack of _Loop
-        self.catches = []      # stack of catch-entry nodes (nearest last)
-        self.finallies = []    # stack of finally-entry nodes (nearest last)
+        self.loops = []  # stack of _Loop
+        self.catches = []  # stack of catch-entry nodes (nearest last)
+        self.finallies = []  # stack of finally-entry nodes (nearest last)
 
 
 # statement types handled explicitly; everything else = simple fallthrough node
 _CONTROL = {
-    "if_statement", "while_statement", "for_statement",
-    "enhanced_for_statement", "do_statement", "block",
-    "return_statement", "throw_statement", "break_statement",
-    "continue_statement", "try_statement", "try_with_resources_statement",
+    "if_statement",
+    "while_statement",
+    "for_statement",
+    "enhanced_for_statement",
+    "do_statement",
+    "block",
+    "return_statement",
+    "throw_statement",
+    "break_statement",
+    "continue_statement",
+    "try_statement",
+    "try_with_resources_statement",
     "labeled_statement",
 }
 
@@ -116,7 +125,12 @@ def _build(cfg, s, ctx):
         return _build_seq(cfg, inner, ctx)
     if t == "if_statement":
         return _build_if(cfg, s, ctx)
-    if t in ("while_statement", "for_statement", "enhanced_for_statement", "do_statement"):
+    if t in (
+        "while_statement",
+        "for_statement",
+        "enhanced_for_statement",
+        "do_statement",
+    ):
         return _build_loop(cfg, s, ctx)
     if t in ("return_statement", "throw_statement"):
         n = cfg.new(s, t)
@@ -126,7 +140,7 @@ def _build(cfg, s, ctx):
             cfg.edge(n, ctx.finallies[-1])
         else:
             cfg.edge(n, cfg.exit)
-        return n, []           # no normal fallthrough
+        return n, []  # no normal fallthrough
     if t == "break_statement":
         n = cfg.new(s, "break")
         if ctx.loops:
@@ -160,7 +174,7 @@ def _build_if(cfg, s, ctx):
         cfg.edge(cond, ae)
         exits += ax
     else:
-        exits.append(cond)     # false branch falls through
+        exits.append(cond)  # false branch falls through
     return cond, exits
 
 
@@ -234,6 +248,7 @@ def _build_try(cfg, s, ctx):
 
 # ---- dominance ----------------------------------------------------------
 
+
 def _dominators(cfg, succ_of, pred_of, roots):
     ids = list(cfg.nodes)
     full = set(ids)
@@ -288,9 +303,11 @@ def postdominates(pdom, a_id, b_id):
 
 # ---- self-check ---------------------------------------------------------
 
+
 def _method(src):
     tree, sb = parse(src)
     from .parse import find
+
     return find(tree.root_node, "method_declaration")[0], sb
 
 
@@ -336,7 +353,9 @@ def _demo():
     opn = _find_call(cfg, "open()")
     cls = _find_call(cfg, "close()")
     assert opn and cls
-    assert postdominates(pdom, cls.id, opn.id), "safe: close in finally must postdom open"
+    assert postdominates(pdom, cls.id, opn.id), (
+        "safe: close in finally must postdom open"
+    )
 
     # 3. dominance: a null-guard dominates a guarded deref
     guarded = """

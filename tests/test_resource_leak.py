@@ -1,4 +1,6 @@
-import os, sys
+import os
+import sys
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from rules.resource_leak import analyze_source
 from rulesmith.report import format_finding
@@ -11,6 +13,7 @@ EXPECT = {
     "safe_twr.java": 0,
     "safe_escapes.java": 0,
 }
+
 
 def run():
     ok = True
@@ -26,6 +29,7 @@ def run():
                 print(f"      {line}")
     print("resource-leak fixtures:", "ALL PASS" if ok else "FAILURES")
     return ok
+
 
 if __name__ == "__main__":
     sys.exit(0 if run() else 1)

@@ -25,13 +25,15 @@ def analyze_source(src, file="<src>"):
         if not _is_empty(body):
             continue
         line, col, _, _ = span(stmt)
-        findings.append({
-            "rule": RULE,
-            "file": file,
-            "line": line,
-            "col": col,
-            "message": f"{kind} statement has an empty body",
-            "note": node_text(body, src_bytes),
-            "help": f"Add statements to the {kind} body or remove the {kind} statement.",
-        })
+        findings.append(
+            {
+                "rule": RULE,
+                "file": file,
+                "line": line,
+                "col": col,
+                "message": f"{kind} statement has an empty body",
+                "note": node_text(body, src_bytes),
+                "help": f"Add statements to the {kind} body or remove the {kind} statement.",
+            }
+        )
     return findings

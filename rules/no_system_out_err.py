@@ -20,13 +20,19 @@ def analyze_source(src, file="<src>"):
         if stream not in ("out", "err"):
             continue
         line, col, _, _ = span(call)
-        findings.append({
-            "rule": RULE,
-            "file": file,
-            "line": line,
-            "col": col,
-            "message": "Do not use System." + stream + " for logging; use a logger.",
-            "note": node_text(call, src_bytes),
-            "help": 'Replace System.' + stream + '.println(...) with logger.info/error(...).',
-        })
+        findings.append(
+            {
+                "rule": RULE,
+                "file": file,
+                "line": line,
+                "col": col,
+                "message": "Do not use System."
+                + stream
+                + " for logging; use a logger.",
+                "note": node_text(call, src_bytes),
+                "help": "Replace System."
+                + stream
+                + ".println(...) with logger.info/error(...).",
+            }
+        )
     return findings

@@ -16,13 +16,15 @@ def analyze_source(src, file="<src>"):
                 continue
             seen.add(assign.id)
             line, col, _, _ = span(assign)
-            findings.append({
-                "rule": RULE,
-                "file": file,
-                "line": line,
-                "col": col,
-                "message": "assignment inside if/while condition",
-                "note": node_text(assign, src_bytes).splitlines()[0],
-                "help": "Do not assign inside a condition; it is almost always a typo for '=='. Move the assignment to its own statement, or use '==' to compare.",
-            })
+            findings.append(
+                {
+                    "rule": RULE,
+                    "file": file,
+                    "line": line,
+                    "col": col,
+                    "message": "assignment inside if/while condition",
+                    "note": node_text(assign, src_bytes).splitlines()[0],
+                    "help": "Do not assign inside a condition; it is almost always a typo for '=='. Move the assignment to its own statement, or use '==' to compare.",
+                }
+            )
     return findings

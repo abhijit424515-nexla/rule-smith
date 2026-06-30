@@ -34,14 +34,19 @@ def analyze_source(src, file="<src>"):
             cls_name = cls.child_by_field_name("name")
             anchor = cls_name if cls_name is not None else equals_node
             line, col, _, _ = span(anchor)
-            cls_label = node_text(cls_name, src_bytes) if cls_name is not None else "<anon>"
-            findings.append({
-                "rule": RULE,
-                "file": file,
-                "line": line,
-                "col": col,
-                "message": "Class '%s' overrides equals() but not hashCode()." % cls_label,
-                "note": node_text(equals_node, src_bytes),
-                "help": "Override hashCode() whenever equals() is overridden so equal objects share a hash code.",
-            })
+            cls_label = (
+                node_text(cls_name, src_bytes) if cls_name is not None else "<anon>"
+            )
+            findings.append(
+                {
+                    "rule": RULE,
+                    "file": file,
+                    "line": line,
+                    "col": col,
+                    "message": "Class '%s' overrides equals() but not hashCode()."
+                    % cls_label,
+                    "note": node_text(equals_node, src_bytes),
+                    "help": "Override hashCode() whenever equals() is overridden so equal objects share a hash code.",
+                }
+            )
     return findings

@@ -1,4 +1,5 @@
 """rulesmith CLI: lint, lint --fix, list."""
+
 import argparse
 import os
 import sys
@@ -8,7 +9,9 @@ import importlib.util
 from rulesmith.report import format_finding
 from rules import resource_leak
 
-_RULES_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "rules")
+_RULES_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "rules"
+)
 
 
 def discover_rules():
@@ -17,7 +20,9 @@ def discover_rules():
     for fn in sorted(glob.glob(os.path.join(_RULES_DIR, "*.py"))):
         if os.path.basename(fn) == "__init__.py":
             continue
-        spec = importlib.util.spec_from_file_location("rule_" + os.path.basename(fn)[:-3], fn)
+        spec = importlib.util.spec_from_file_location(
+            "rule_" + os.path.basename(fn)[:-3], fn
+        )
         mod = importlib.util.module_from_spec(spec)
         try:
             spec.loader.exec_module(mod)
@@ -35,8 +40,11 @@ def _java_files(paths):
     out = []
     for p in paths:
         if os.path.isdir(p):
-            out += [f for f in glob.glob(p + "/**/*.java", recursive=True)
-                    if "/target/" not in f]
+            out += [
+                f
+                for f in glob.glob(p + "/**/*.java", recursive=True)
+                if "/target/" not in f
+            ]
         elif p.endswith(".java"):
             out.append(p)
     return out
@@ -55,6 +63,7 @@ def cmd_lint(args):
     filtered = []
     if getattr(args, "judge", False):
         from rulesmith import judge as judgemod
+
         _cache = judgemod.load_cache()
     total = 0
     fixed = 0
@@ -75,8 +84,10 @@ def cmd_lint(args):
                 if not args.dry_run:
                     open(f, "w", encoding="utf8").write(new)
                 fixed += len(edits) // 2
-                print(f"{'would fix' if args.dry_run else 'fixed'} {rel}: "
-                      f"{len(edits)//2} resource(s) wrapped in try-with-resources")
+                print(
+                    f"{'would fix' if args.dry_run else 'fixed'} {rel}: "
+                    f"{len(edits) // 2} resource(s) wrapped in try-with-resources"
+                )
         else:
             findings = []
             for name, mod in RULES.items():
@@ -85,6 +96,7 @@ def cmd_lint(args):
                 findings += mod.analyze_source(src, rel)
             if args.judge and findings:
                 from rulesmith import judge as judgemod
+
                 kept = []
                 for fd in findings:
                     if not fd.get("judge"):
@@ -93,7 +105,9 @@ def cmd_lint(args):
                     snip = judgemod.snippet_for(src, fd["line"])
                     v = judgemod.judge(fd, snip, _cache)
                     if v["real"]:
-                        fd["note"] = fd.get("note", "") + f" | judge: real ({v['reason']})"
+                        fd["note"] = (
+                            fd.get("note", "") + f" | judge: real ({v['reason']})"
+                        )
                         kept.append(fd)
                     else:
                         filtered.append((rel, fd, v["reason"]))
@@ -107,6 +121,7 @@ def cmd_lint(args):
         return 0
     if args.judge:
         from rulesmith import judge as judgemod
+
         judgemod.save_cache(_cache)
         print(f"{len(filtered)} finding(s) filtered as false positives by the judge.")
     print(f"{total} finding(s) across {len(files)} file(s).")
@@ -115,6 +130,7 @@ def cmd_lint(args):
 
 def cmd_add(args):
     from rulesmith.authoring import add_rule
+
     rid = add_rule(" ".join(args.description))
     return 0 if rid else 1
 
@@ -127,8 +143,17 @@ def main(argv=None):
     lp.add_argument("paths", nargs="+")
     lp.add_argument("--fix", action="store_true", help="apply safe autofixes")
     lp.add_argument("--dry-run", action="store_true", help="with --fix: don't write")
-    lp.add_argument("--judge", action="store_true", help="filter hybrid findings via claude -p (cached)")
-    lp.add_argument("--rules", type=lambda x: set(x.split(",")), default=None, help="comma-separated rule ids to run")
+    lp.add_argument(
+        "--judge",
+        action="store_true",
+        help="filter hybrid findings via claude -p (cached)",
+    )
+    lp.add_argument(
+        "--rules",
+        type=lambda x: set(x.split(",")),
+        default=None,
+        help="comma-separated rule ids to run",
+    )
     lp.set_defaults(fn=cmd_lint)
     ad = sub.add_parser("add", help="compile an English rule into a checked rule")
     ad.add_argument("description", nargs="+", help="the rule in plain English")

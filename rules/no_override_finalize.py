@@ -20,13 +20,15 @@ def analyze_source(src, file="<src>"):
         if param_count != 0:
             continue
         line, col, _, _ = span(name_node)
-        findings.append({
-            "rule": RULE,
-            "file": file,
-            "line": line,
-            "col": col,
-            "message": "Do not override Object.finalize().",
-            "note": node_text(name_node, src_bytes),
-            "help": "finalize() is deprecated and unreliable; use try-with-resources, Closeable, or java.lang.ref.Cleaner instead.",
-        })
+        findings.append(
+            {
+                "rule": RULE,
+                "file": file,
+                "line": line,
+                "col": col,
+                "message": "Do not override Object.finalize().",
+                "note": node_text(name_node, src_bytes),
+                "help": "finalize() is deprecated and unreliable; use try-with-resources, Closeable, or java.lang.ref.Cleaner instead.",
+            }
+        )
     return findings

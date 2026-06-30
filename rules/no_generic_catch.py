@@ -14,13 +14,16 @@ def analyze_source(src, file="<src>"):
             name = node_text(type_id, src_bytes)
             if name in BANNED:
                 line, col, _, _ = span(type_id)
-                findings.append({
-                    "rule": RULE,
-                    "file": file,
-                    "line": line,
-                    "col": col,
-                    "message": "catch block catches generic '%s'" % name,
-                    "note": node_text(catch, src_bytes).splitlines()[0],
-                    "help": "Catch a specific exception subclass instead of '%s'." % name,
-                })
+                findings.append(
+                    {
+                        "rule": RULE,
+                        "file": file,
+                        "line": line,
+                        "col": col,
+                        "message": "catch block catches generic '%s'" % name,
+                        "note": node_text(catch, src_bytes).splitlines()[0],
+                        "help": "Catch a specific exception subclass instead of '%s'."
+                        % name,
+                    }
+                )
     return findings

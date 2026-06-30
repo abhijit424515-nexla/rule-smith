@@ -10,7 +10,7 @@ def format_finding(f):
     loc = f"  --> {f['file']}:{f['line']}:{f['col']}"
     lines = [head, loc]
     if f.get("note"):
-        lines.append(f"   = note: {f['note']}")          # the deterministic evidence
+        lines.append(f"   = note: {f['note']}")  # the deterministic evidence
     if f.get("help"):
         lines.append(f"   = help: {f['help']}")
     lines.append(f"   = see:  {_DOC}/{rule}")

@@ -27,15 +27,19 @@ def analyze_source(src, file="<src>"):
         # unwound. Upgrade to a CFG postdominator check if those show up.
         if last.type in _TERMINATORS:
             continue
-        label = next((c for c in group.named_children if c.type == "switch_label"), group)
+        label = next(
+            (c for c in group.named_children if c.type == "switch_label"), group
+        )
         line, col, _, _ = span(label)
-        findings.append({
-            "rule": RULE,
-            "file": file,
-            "line": line,
-            "col": col,
-            "message": "switch case falls through; end it with break, return, or throw",
-            "note": node_text(label, src_bytes).strip(),
-            "help": "Add break/return/throw, or stack the label with the next case if intentional.",
-        })
+        findings.append(
+            {
+                "rule": RULE,
+                "file": file,
+                "line": line,
+                "col": col,
+                "message": "switch case falls through; end it with break, return, or throw",
+                "note": node_text(label, src_bytes).strip(),
+                "help": "Add break/return/throw, or stack the label with the next case if intentional.",
+            }
+        )
     return findings

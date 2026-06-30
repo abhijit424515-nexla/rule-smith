@@ -3,12 +3,16 @@
 Lightweight and conservative. escapes() over-approximates (favours NOT
 flagging) so the leak rule errs toward false negatives, not noisy positives.
 """
+
 from .parse import walk
 
 
 def _ident_uses(root, name):
-    return [n for n in walk(root) if n.type == "identifier"
-            and n.text.decode("utf8", "replace") == name]
+    return [
+        n
+        for n in walk(root)
+        if n.type == "identifier" and n.text.decode("utf8", "replace") == name
+    ]
 
 
 def _ancestor(node, *types):
@@ -35,8 +39,11 @@ def escapes(method_ts, name):
         # passed to a constructor: `new Wrapper(name)` -- wrapper takes
         # ownership (closing it closes name). Plain method-call args are
         # transient use, NOT ownership transfer, so they don't escape.
-        if p.type == "argument_list" and p.parent is not None \
-                and p.parent.type == "object_creation_expression":
+        if (
+            p.type == "argument_list"
+            and p.parent is not None
+            and p.parent.type == "object_creation_expression"
+        ):
             return True
         # returned
         if _ancestor(n, "return_statement") is not None:
@@ -58,11 +65,17 @@ def defs_uses(method_ts, name):
     defs, uses = [], []
     for n in _ident_uses(method_ts, name):
         p = n.parent
-        if p is not None and p.type == "variable_declarator" \
-                and p.child_by_field_name("name") is n:
+        if (
+            p is not None
+            and p.type == "variable_declarator"
+            and p.child_by_field_name("name") is n
+        ):
             defs.append(n)
-        elif p is not None and p.type == "assignment_expression" \
-                and p.child_by_field_name("left") is n:
+        elif (
+            p is not None
+            and p.type == "assignment_expression"
+            and p.child_by_field_name("left") is n
+        ):
             defs.append(n)
         else:
             uses.append(n)

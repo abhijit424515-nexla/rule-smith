@@ -34,15 +34,17 @@ def analyze_source(src, file="<src>"):
         if (_is_size_call(left, sb) and _is_zero(right, sb)) or (
             _is_zero(left, sb) and _is_size_call(right, sb)
         ):
-            l, c, _, _ = __import__("rulesmith.parse", fromlist=["span"]).span(be)
+            ln, c, _, _ = __import__("rulesmith.parse", fromlist=["span"]).span(be)
             repl = "isEmpty()" if op == "==" else "!isEmpty()"
-            findings.append({
-                "rule": RULE,
-                "file": file,
-                "line": l,
-                "col": c,
-                "message": "Use isEmpty() instead of comparing size() to 0",
-                "note": node_text(be, sb),
-                "help": "Replace size() " + op + " 0 with " + repl,
-            })
+            findings.append(
+                {
+                    "rule": RULE,
+                    "file": file,
+                    "line": ln,
+                    "col": c,
+                    "message": "Use isEmpty() instead of comparing size() to 0",
+                    "note": node_text(be, sb),
+                    "help": "Replace size() " + op + " 0 with " + repl,
+                }
+            )
     return findings

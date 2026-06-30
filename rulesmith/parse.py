@@ -1,4 +1,5 @@
 """Phase 0 primitive: parse Java + query the AST. Emits facts, no verdicts."""
+
 from tree_sitter import Language, Parser
 import tree_sitter_java as tsj
 
@@ -12,7 +13,7 @@ def parse(src: str):
 
 
 def node_text(node, src_b) -> str:
-    return src_b[node.start_byte:node.end_byte].decode("utf8", "replace")
+    return src_b[node.start_byte : node.end_byte].decode("utf8", "replace")
 
 
 def span(node):
@@ -41,9 +42,9 @@ def query(root, pattern: str):
     """
     caps = JAVA.query(pattern).captures(root)
     out = []
-    if isinstance(caps, dict):              # ts >= 0.22
+    if isinstance(caps, dict):  # ts >= 0.22
         for name, nodes in caps.items():
             out += [(name, n) for n in nodes]
-    else:                                    # ts <= 0.21
+    else:  # ts <= 0.21
         out += [(name, n) for (n, name) in caps]
     return out

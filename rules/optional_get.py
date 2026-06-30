@@ -5,6 +5,7 @@ isEmpty()) on every path, else it throws NoSuchElementException. Reuses the
 same cfg + dominance primitives as resource-leak -- the guard-dominates-use
 pattern that generalizes to NPE, bounds checks, and typestate.
 """
+
 from rulesmith.parse import parse, find, span, node_text
 from rulesmith.cfg import build_method, dominators, dominates
 
@@ -33,8 +34,13 @@ def _cfg_node_containing(cfg, ts_target):
     for n in cfg.nodes.values():
         if n.ts is None:
             continue
-        if n.ts.start_byte <= ts_target.start_byte and n.ts.end_byte >= ts_target.end_byte:
-            if best is None or (n.ts.end_byte - n.ts.start_byte) < (best.ts.end_byte - best.ts.start_byte):
+        if (
+            n.ts.start_byte <= ts_target.start_byte
+            and n.ts.end_byte >= ts_target.end_byte
+        ):
+            if best is None or (n.ts.end_byte - n.ts.start_byte) < (
+                best.ts.end_byte - best.ts.start_byte
+            ):
                 best = n
     return best
 
@@ -69,13 +75,18 @@ def analyze_method(method_ts, src_b, file="<src>"):
                 break
         if not guarded:
             sl, sc, _, _ = span(mi)
-            findings.append(dict(
-                rule=RULE, file=file, line=sl, col=sc,
-                message=f"`{var}.get()` is not guarded by a presence check",
-                note="no isPresent()/isDefined() guard dominates this get(); "
-                     "throws NoSuchElementException when empty",
-                help=f"guard with if ({var}.isPresent()) or use {var}.map(...)/orElse(...)",
-            ))
+            findings.append(
+                dict(
+                    rule=RULE,
+                    file=file,
+                    line=sl,
+                    col=sc,
+                    message=f"`{var}.get()` is not guarded by a presence check",
+                    note="no isPresent()/isDefined() guard dominates this get(); "
+                    "throws NoSuchElementException when empty",
+                    help=f"guard with if ({var}.isPresent()) or use {var}.map(...)/orElse(...)",
+                )
+            )
     return findings
 
 

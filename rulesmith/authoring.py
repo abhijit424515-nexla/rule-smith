@@ -4,9 +4,9 @@ Compiles a natural-language rule into a python rule module + pos/neg
 fixtures via `claude -p`, then runs the fixtures as a gate. Installs only
 on green; on failure feeds the errors back and retries once.
 """
+
 import importlib.util
 import os
-import re
 
 from .llm import complete, extract_json
 
@@ -14,7 +14,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RULES_DIR = os.path.join(ROOT, "rules")
 FIX_DIR = os.path.join(ROOT, "fixtures")
 
-API = '''\
+API = """\
 RuleSmith primitive API (import these; do not reimplement parsing):
 
   from rulesmith.parse import parse, find, span, node_text, walk
@@ -39,9 +39,9 @@ Common tree-sitter-java node types: method_invocation (fields object,name,argume
   binary_expression (fields left,operator,right), local_variable_declaration
   (fields type, then variable_declarator with fields name,value), if_statement
   (fields condition,consequence,alternative), identifier, string_literal.
-'''
+"""
 
-PROMPT = '''You compile a natural-language coding rule into a RuleSmith python rule \
+PROMPT = """You compile a natural-language coding rule into a RuleSmith python rule \
 module plus test fixtures. Output ONLY a JSON object, no prose.
 
 {api}
@@ -59,11 +59,13 @@ Return JSON with this exact shape:
 }}
 Provide at least 2 violation fixtures and 2 clean fixtures. Keep the module \
 deterministic and small. Use the primitive API; never use regex on raw source for \
-structure. expect = number of findings analyze_source should return for that file.'''
+structure. expect = number of findings analyze_source should return for that file."""
 
 
 def _load(path):
-    spec = importlib.util.spec_from_file_location("genrule_" + os.path.basename(path), path)
+    spec = importlib.util.spec_from_file_location(
+        "genrule_" + os.path.basename(path), path
+    )
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
@@ -100,12 +102,14 @@ def _verify(module_code, fixtures, tmp):
 def add_rule(english, max_attempts=2):
     tmp = os.path.join("/tmp", "rulesmith_gen.py")
     feedback = ""
-    last = None
     for attempt in range(1, max_attempts + 1):
         prompt = PROMPT.format(api=API, rule=english)
         if feedback:
-            prompt += "\n\nYour previous attempt FAILED its fixtures:\n" + feedback + \
-                      "\nFix the module so every fixture matches its expected count. Output JSON only."
+            prompt += (
+                "\n\nYour previous attempt FAILED its fixtures:\n"
+                + feedback
+                + "\nFix the module so every fixture matches its expected count. Output JSON only."
+            )
         print(f"[attempt {attempt}] asking claude -p to compile the rule...")
         reply = complete(prompt)
         try:
@@ -113,7 +117,6 @@ def add_rule(english, max_attempts=2):
         except Exception as e:
             feedback = f"could not parse your JSON: {e}"
             continue
-        last = spec
         rid = spec["rule_id"]
         ok, rep = _verify(spec["module"], spec["fixtures"], tmp)
         print("\n".join(rep))
@@ -127,8 +130,10 @@ def add_rule(english, max_attempts=2):
             for fx in spec["fixtures"]:
                 with open(os.path.join(fxd, fx["file"]), "w") as f:
                     f.write(fx["code"])
-            print(f"\ninstalled rule '{rid}' -> {os.path.relpath(dest, ROOT)} "
-                  f"({len(spec['fixtures'])} fixtures, all green)")
+            print(
+                f"\ninstalled rule '{rid}' -> {os.path.relpath(dest, ROOT)} "
+                f"({len(spec['fixtures'])} fixtures, all green)"
+            )
             return rid
         feedback = "\n".join(rep)
         print(f"[attempt {attempt}] fixtures failed; retrying with feedback\n")

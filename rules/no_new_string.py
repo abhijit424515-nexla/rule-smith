@@ -14,13 +14,15 @@ def analyze_source(src, file="<src>"):
         if node_text(type_node, src_bytes) != "String":
             continue
         line, col = span(node)[0], span(node)[1]
-        findings.append({
-            "rule": RULE,
-            "file": file,
-            "line": line,
-            "col": col,
-            "message": "do not use the new String(...) constructor; use the string literal directly",
-            "note": node_text(node, src_bytes),
-            "help": "Replace `new String(\"x\")` with the literal `\"x\"`; the constructor allocates a needless extra object.",
-        })
+        findings.append(
+            {
+                "rule": RULE,
+                "file": file,
+                "line": line,
+                "col": col,
+                "message": "do not use the new String(...) constructor; use the string literal directly",
+                "note": node_text(node, src_bytes),
+                "help": 'Replace `new String("x")` with the literal `"x"`; the constructor allocates a needless extra object.',
+            }
+        )
     return findings

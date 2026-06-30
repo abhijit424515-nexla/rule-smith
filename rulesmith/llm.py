@@ -3,6 +3,7 @@
 No API key required -- uses the user's authenticated Claude Code session.
 This is the supported headless interface (same as the Agent SDK).
 """
+
 import json
 import subprocess
 
@@ -16,7 +17,7 @@ def complete(prompt, system=None, timeout=300):
         raise RuntimeError(f"claude -p failed: {r.stderr[:500]}")
     data = json.loads(r.stdout)
     if data.get("is_error"):
-        raise RuntimeError(f"claude error: {data.get('result','')[:500]}")
+        raise RuntimeError(f"claude error: {data.get('result', '')[:500]}")
     return data["result"]
 
 
@@ -45,5 +46,5 @@ def extract_json(text):
             elif c == "}":
                 depth -= 1
                 if depth == 0:
-                    return json.loads(text[start:i + 1])
+                    return json.loads(text[start : i + 1])
     raise ValueError("unbalanced JSON object in reply")

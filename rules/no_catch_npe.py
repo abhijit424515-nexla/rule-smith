@@ -15,13 +15,15 @@ def analyze_source(src, file="<src>"):
                 name = node_text(tid, src_bytes)
                 if name == _BANNED:
                     line, col, _, _ = span(tid)
-                    findings.append({
-                        "rule": RULE,
-                        "file": file,
-                        "line": line,
-                        "col": col,
-                        "message": "Do not catch NullPointerException; fix the root cause instead.",
-                        "note": node_text(clause, src_bytes).splitlines()[0],
-                        "help": "Add null checks or guarantee non-null inputs rather than catching NPE.",
-                    })
+                    findings.append(
+                        {
+                            "rule": RULE,
+                            "file": file,
+                            "line": line,
+                            "col": col,
+                            "message": "Do not catch NullPointerException; fix the root cause instead.",
+                            "note": node_text(clause, src_bytes).splitlines()[0],
+                            "help": "Add null checks or guarantee non-null inputs rather than catching NPE.",
+                        }
+                    )
     return findings
