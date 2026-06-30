@@ -4,6 +4,10 @@ class B {
       step();
     }
   }
-  boolean check() { return false; }
+
+  boolean check() {
+    return false;
+  }
+
   void step() {}
 }

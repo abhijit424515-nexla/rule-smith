@@ -1,6 +1,6 @@
 public class C {
-    String greet() {
-        String s = "hello";
-        return s;
-    }
+  String greet() {
+    String s = "hello";
+    return s;
+  }
 }

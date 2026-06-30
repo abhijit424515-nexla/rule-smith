@@ -6,5 +6,6 @@ class B {
       handle(e);
     }
   }
+
   void handle(Exception e) {}
 }

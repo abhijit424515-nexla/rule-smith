@@ -6,6 +6,8 @@ class D {
       recover();
     }
   }
+
   void risky() {}
+
   void recover() {}
 }
