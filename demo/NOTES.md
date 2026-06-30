@@ -223,14 +223,15 @@ verdict is cached** by `(rule, snippet)` so it's reproducible.
 <span class="prompt">$</span> rulesmith lint --fix --dry-run --rules resource-leak \<br/>
 <span class="out">&nbsp;&nbsp;&nbsp;&nbsp;$BC/one-drive-probe-service/src/main/java/com/nexla/probe/onedrive/OneDriveConnectorService.java</span><br/>
 <span class="out">would fix $BC/one-drive-probe-service/src/main/java/com/nexla/probe/onedrive/OneDriveConnectorService.java: 2 resource(s) wrapped in try-with-resources</span><br/>
-<span class="out">2 auto-fixed, 1 need manual handling (suggest-only).</span>
+<span class="out">&nbsp;</span><br/>
+<span class="out">2 finding(s), 2 auto-fixed.</span>
 </div>
 </div>
 
-Only the **provably-safe subset** auto-fixes — a pure deterministic codemod, no AI.
-Everything else stays a rustc-style suggestion with help + doc link.
+The deterministic `--fix` touches only the **provably-safe subset** — a pure codemod,
+no AI. Everything else stays a suggestion (or use the opt-in `--ai-fix`, via claude -p).
 
-<!-- Beat 5, 45s. The tool never AI-rewrites code; it won't touch what it can't prove safe. -->
+<!-- Beat 5, 45s. Deterministic --fix won't touch what it can't prove safe; --ai-fix is the explicit opt-in. -->
 
 ---
 

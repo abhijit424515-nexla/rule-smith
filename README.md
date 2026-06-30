@@ -72,6 +72,7 @@ $ rulesmith add "do not catch NullPointerException; fix the root cause"
 | `lint` · `list` · `--fix` · CI gate | **No** | pure CFG + AST, deterministic, offline, no key |
 | `add "<english>"` | **Once** | codegen, then gated by fixtures |
 | `lint --judge` | **Cached** | adjudicate a false positive, then cached → AI-free |
+| `lint --ai-fix` | **Opt-in** | explicit flag: rewrite a finding via claude -p, parse-validated |
 
 The everyday workflow runs forever with no API key. Claude is touched only to *author* a rule and (optionally) to *adjudicate* a borderline finding — both gated, both cached by `(rule, snippet)` so the same code always gets the same verdict.
 
@@ -105,7 +106,8 @@ See `examples/real-world/` for five unmodified backend-connectors files, each li
 `OffsetStorageReader`. `--judge` filters them via `claude -p`, cached.
 - CFG exception edges are coarse (entry-level, not per-statement).
 - Autofix covers only `resource-leak`'s provably-safe subset; the other 113 rules
-emit a `= help:` suggestion you apply yourself. The tool never AI-rewrites code.
+emit a `= help:` suggestion you apply yourself. The deterministic `--fix` never
+AI-rewrites code; the opt-in `--ai-fix` flag will (via claude -p, parse-validated).
 - Formatting reflow is delegated to google-java-format.
 
 ---
