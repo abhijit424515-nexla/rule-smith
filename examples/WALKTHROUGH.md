@@ -5,7 +5,7 @@ each needs typestate, purity, lock-state, or closure reasoning, not a syntax
 pattern. `examples/java-fixed/` is the same code repaired (lints clean).
 
 ```
-alias rulesmith='python -m rulesmith.cli'
+pip install -e .   # exposes the `rulesmith` command (or use: python -m rulesmith.cli)
 FIVE=builder-terminal-before-setters,pure-method-no-side-effects,guarded-by-lock-held,blocking-call-while-holding-lock,lambda-captures-mutable-state
 ```
 

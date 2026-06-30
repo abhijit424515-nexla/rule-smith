@@ -11,7 +11,7 @@ control-flow graph, so it cannot answer the questions that actually catch bugs:
 
 RuleSmith can, because every check runs a real **CFG + dominance** analysis. You
 describe a rule in plain English; it compiles to a tested, deterministic check and
-installs it into your CLI. **113 rules** ship today, mined from Checker Framework,
+installs it into your CLI. **114 rules** ship today, mined from Checker Framework,
 Effective Java, NASA's Power of Ten, OWASP, and the FP literature.
 
 ---
@@ -56,7 +56,7 @@ Every finding cites the graph fact behind it — reproducible every run, no AI.
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e .                      # exposes the `rulesmith` command
 
-rulesmith list                        # the 113 installed rules
+rulesmith list                        # the 114 installed rules
 rulesmith lint path/to/src            # exit 1 on findings (CI-ready)
 rulesmith lint --fix path/to/src      # deterministic try-with-resources rewrite
 rulesmith add "a switch over an enum must have a default case"
@@ -97,7 +97,7 @@ Claude only adjudicates the fuzzy residual.
 
 ```
 rulesmith/   the engine — parse, cfg (CFG+dominance), dataflow, report, cli, llm, authoring, judge
-rules/       113 installed rule modules, each headed by its exact English description
+rules/       114 installed rule modules, each headed by its exact English description
 fixtures/    pos/neg test cases per rule — the trust mechanism
 examples/    PaymentGateway before/after, real-world/ (5 production files), WALKTHROUGH
 demo/        NOTES.md (MARP deck: why CLAUDE.md isn't enough) + rendered slides
@@ -106,7 +106,7 @@ diagram/     architecture (excalidraw source + svg)
 
 ## What it catches
 
-113 rules across null-safety, resource lifecycle, concurrency & locking,
+114 rules across null-safety, resource lifecycle, concurrency & locking,
 immutability/purity, error handling, type design, security (weak crypto, hardcoded
 secrets, broken trust managers), complexity metrics, and naming. Highlights — the
 flow-sensitive ones no text rule can see:
@@ -124,7 +124,7 @@ lighting up 13–15 rules.
 - Resource detection is name-based (no type resolution) → false positives like
   `OffsetStorageReader`. `--judge` filters them via `claude -p`, cached.
 - CFG exception edges are coarse (entry-level, not per-statement).
-- Autofix covers only `resource-leak`'s provably-safe subset; the other 112 rules
+- Autofix covers only `resource-leak`'s provably-safe subset; the other 113 rules
   emit a `= help:` suggestion you apply yourself. The tool never AI-rewrites code.
 - Formatting reflow is delegated to google-java-format.
 
