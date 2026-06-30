@@ -53,6 +53,7 @@ rulesmith lint path/to/src            # exit 1 on findings (CI-ready)
 rulesmith lint --fix path/to/src              # deterministic codemod + AI-fix the rest (sonnet), shows a diff
 rulesmith lint --fix --model none path/to/src # deterministic only, no AI
 rulesmith lint --fix --model opus path/to/src # AI-fix the residual with opus
+rulesmith lint --fix --refresh-cache path/to/src  # ignore the cached fix and recompute
 rulesmith add "a switch over an enum must have a default case"
 ```
 
@@ -111,6 +112,8 @@ emit a `= help:` suggestion. `--fix` applies the deterministic codemod and then
 AI-fixes the residual via claude -p (default sonnet, parse-validated, colored diff);
 pass `--model none` to stay fully deterministic and AI-free.
 - Formatting reflow is delegated to google-java-format.
+- `--fix` results are cached at `/tmp/rulesmith.cache` keyed on (rules, file
+  content, model); editing the file auto-invalidates, or pass `--refresh-cache`.
 
 ---
 
