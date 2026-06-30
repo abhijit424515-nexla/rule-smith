@@ -1,64 +1,48 @@
-# Walkthrough — fixing a messy codebase one rule at a time
+# Walkthrough — flow-sensitive bugs a CLAUDE.md can't catch
 
-`examples/java/` has two realistic files with **6 issues across all 6 installed
-rules**. `examples/java-fixed/` is the same code after every fix (lints clean).
-This page shows the progression.
+`examples/java/PaymentGateway.java` has ten methods. Each is syntactically
+ordinary — the defect lives in the control or data flow. A prose rule in a
+CLAUDE.md is read by an LLM matching text; it has no CFG, so it cannot decide
+"is close() on every path?" or "does the null-check dominate this deref?".
+RuleSmith runs the actual analysis.
 
 ```
 alias rulesmith='python -m rulesmith.cli'
+TEN=resource-leak,optional-get-without-ispresent,null-deref-needs-dominating-guard,unchecked-downcast,field-read-before-assign,non-atomic-shared-update,guarded-by-lock-held,no-string-concat-in-loop,no-superfluous-else,constructor-definite-assignment
 ```
 
-## Step 0 — see everything that's wrong
+## The ten checks (each flow-sensitive)
+
+| # | Rule | Why a text rule misses it |
+|---|------|----------------------------|
+| 1 | field-read-before-assign | field read before its assignment *in the ctor* |
+| 2 | resource-leak | close() exists, but an early `return` skips it on one path |
+| 3 | optional-get-without-ispresent | get() not *dominated* by isPresent() |
+| 4 | null-deref-needs-dominating-guard | guard misses one path to the deref |
+| 5 | unchecked-downcast | cast not *dominated* by an instanceof |
+| 6 | non-atomic-shared-update | read-modify-write on a @GuardedBy field |
+| 7 | guarded-by-lock-held | @GuardedBy field touched without the lock |
+| 8 | no-string-concat-in-loop | += inside a loop (O(n^2)) |
+| 9 | no-superfluous-else | else after a branch that always returns |
+| 10 | constructor-definite-assignment | field not assigned on every ctor path |
+
+## Step 0 — see the flow bugs
 ```
-$ rulesmith lint examples/java
-warning[resource-leak]:            `out` (FileOutputStream) is never closed        ReportWriter.java
-warning[string-equality-check]:    Use .equals() to compare strings, not '=='      ReportWriter.java
-warning[empty-catch-block]:        Empty catch block swallows exception            ReportWriter.java
-warning[optional-get-without-ispresent]: `name.get()` is not guarded               OrderProcessor.java
-warning[enum-switch-default]:      Switch over enum must have a default case        OrderProcessor.java
-warning[boxed-integer-long-comparison]: Boxed Integer/Long compared with ==         OrderProcessor.java
-6 finding(s) across 2 file(s).
+$ rulesmith lint --rules $TEN examples/java
+... 12 findings (the ten rules; guarded-by fires on two accesses)
+```
+Each finding's `= note:` states the graph fact (post-dominance, dominance,
+definite-assignment) — deterministic, reproducible.
+
+## Step 1 — repair the flow, not the syntax
+`examples/java-fixed/PaymentGateway.java` is the same code with the control flow
+fixed: try-with-resources, orElse, a dominating instanceof, synchronized access,
+StringBuilder, no else-after-return.
+```
+$ rulesmith lint --rules $TEN examples/java-fixed
+0 finding(s)
 ```
 
-## Step 1 — auto-fix what is safe (resource-leak)
-Only the provably-safe subset auto-rewrites. Here, one resource:
-```
-$ rulesmith lint --fix examples/java
-fixed examples/java/ReportWriter.java: 1 resource(s) wrapped in try-with-resources
-1 auto-fixed, 0 need manual handling (suggest-only).
-```
-```diff
-- FileOutputStream out = newStream(path);
-- out.write(data);
-+ try (FileOutputStream out = newStream(path)) {
-+     out.write(data);
-+ }
-```
-(try-with-resources closes on every exit — normal or exception. google-java-format
-reflows the indentation afterward.)
-
-## Steps 2-6 — the suggest-only rules (you apply the fix the diagnostic names)
-
-| # | Rule | Before | After |
-|---|------|--------|-------|
-| 2 | string-equality-check | `format == "csv"` | `format.equals("csv")` |
-| 3 | empty-catch-block | `catch (IOException e) {}` | `catch (IOException e) { throw new RuntimeException(e); }` |
-| 4 | enum-switch-default | switch with no default | add `default: return "unknown";` |
-| 5 | optional-get-without-ispresent | `return name.get();` | `return name.orElse("anonymous");` |
-| 6 | boxed-integer-long-comparison | `return a == b;` | `return a.equals(b);` |
-
-Each diagnostic carries the fix in its `= help:` line and a `= note:` with the
-deterministic evidence (e.g. for the leak: "close() is on no path").
-
-## Done — clean
-```
-$ rulesmith lint examples/java-fixed
-0 finding(s) across 2 file(s).
-```
-
-## Try the judge on a real repo
-The name-based resource heuristic can over-flag (e.g. `OffsetStorageReader`).
-`--judge` adjudicates the residual via `claude -p` (cached):
-```
-rulesmith lint --judge <real-java-dir>
-```
+The verdict flipped on the **flow**. A CLAUDE.md rule sees near-identical code in
+both files and can't tell them apart — that's the value RuleSmith adds that you
+can't abstract away with "just put it in CLAUDE.md."

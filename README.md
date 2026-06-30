@@ -75,7 +75,7 @@ tests/           primitive + rule + autofix self-checks
 - [x] **P3** CLI + try-with-resources autofix (safe subset only)
 - [x] **P4** authoring loop — English rule -> verified -> installed
 - [x] **P5** judgment layer (filter false positives, cached) + optional-get rule
-- [x] **P6** CI gate (`--rules` selector + GitHub Action template) + DEMO.md
+- [x] **P6** CI gate (`--rules` selector + GitHub Action template) + demo/NOTES.md
 - [x] **P7** seed catalog rules via authoring loop (6 rules installed)
 - [ ] stretch: curate full 184-catalog, per-rule doc pages, typestate, Scala 2.12
 
@@ -99,9 +99,10 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 
 ## Examples
 
-`examples/java/` — two messy files with 6 issues across all 6 rules.
-`examples/java-fixed/` — the same code after fixes (lints clean).
-`examples/WALKTHROUGH.md` — fixing them one rule at a time.
+`examples/java/PaymentGateway.java` — 10 flow-sensitive bugs a CLAUDE.md can't catch.
+`examples/java-fixed/PaymentGateway.java` — same shapes, flow repaired (lints clean).
+`examples/WALKTHROUGH.md` — the before/after, rule by rule.
+`demo/NOTES.md` — demo-day script (why CLAUDE.md isn't enough).
 `workflows/github-action.yml` — CI gate template for any Java repo.
 
 ## Known limits (honest)
