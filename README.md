@@ -2,17 +2,12 @@
 
 **A coding rulebook a machine *runs* — not one an LLM *reads*.**
 
-You pasted your conventions into a `CLAUDE.md` and hoped the AI would enforce them.
-But a `CLAUDE.md` rule is prose pattern-matched by a language model. It has no
-control-flow graph, so it cannot answer the questions that actually catch bugs:
+You pasted your conventions into a `CLAUDE.md` and hoped the AI would enforce them. But a `CLAUDE.md` rule is prose pattern-matched by a language model. It has no control-flow graph, so it cannot answer the questions that actually catch bugs:
 
 > *Is `close()` on **every** path, including the early `return`?*
 > *Does the null-check **dominate** this dereference?*
 
-RuleSmith can, because every check runs a real **CFG + dominance** analysis. You
-describe a rule in plain English; it compiles to a tested, deterministic check and
-installs it into your CLI. **114 rules** ship today, mined from Checker Framework,
-Effective Java, NASA's Power of Ten, OWASP, and the FP literature.
+RuleSmith can, because every check runs a real **CFG + dominance** analysis. You describe a rule in plain English; it compiles to a tested, deterministic check and installs it into your CLI. **114 rules** ship today, mined from Checker Framework, Effective Java, NASA's Power of Ten, OWASP, and the FP literature.
 
 ---
 
@@ -34,9 +29,7 @@ warning[atomic-get-set-race]: Non-atomic get-then-set on Atomic 'textBB' loses c
    = help: use textBB.updateAndGet(...) or compareAndSet(...)
 ```
 
-A `CLAUDE.md` rule — and SonarQube — can't express this. It needs to see that the
-value written back is **derived from a prior read of the same atomic**. That's
-dataflow, not pattern-matching. The value you can't vibe out of a sentence.
+A `CLAUDE.md` rule — and SonarQube — can't express this. It needs to see that the value written back is **derived from a prior read of the same atomic**. That's dataflow, not pattern-matching. The value you can't vibe out of a sentence.
 
 ## It finds real bugs, in shipped code
 
@@ -45,8 +38,7 @@ $ rulesmith lint --rules resource-leak \
     backend-connectors/.../onedrive/OneDriveConnectorService.java
 warning[resource-leak]: `fileInput` (FileInputStream) is never closed  --> :516
 ```
-Confirmed leak in production. Whole-repo run: **1242 files, 0 parse errors.**
-Every finding cites the graph fact behind it — reproducible every run, no AI.
+Confirmed leak in production. Whole-repo run: **1242 files, 0 parse errors.** Every finding cites the graph fact behind it — reproducible every run, no AI.
 
 ---
 
@@ -70,9 +62,7 @@ $ rulesmith add "do not catch NullPointerException; fix the root cause"
 [ok] violation.java: 1   [ok] clean.java: 0   installed 'no-catch-npe' (all green)
 ```
 
-`claude -p` writes the rule **and** its pos/neg fixtures; a deterministic gate runs
-them and installs **only on green**. The LLM proposes; the test gate decides. That
-gate is exactly what a `CLAUDE.md` rule never gets.
+`claude -p` writes the rule **and** its pos/neg fixtures; a deterministic gate runs them and installs **only on green**. The LLM proposes; the test gate decides. That gate is exactly what a `CLAUDE.md` rule never gets.
 
 ## AI builds the checks. Code runs them.
 
@@ -82,18 +72,13 @@ gate is exactly what a `CLAUDE.md` rule never gets.
 | `add "<english>"` | **Once** | codegen, then gated by fixtures |
 | `lint --judge` | **Cached** | adjudicate a false positive, then cached → AI-free |
 
-The everyday workflow runs forever with no API key. Claude is touched only to
-*author* a rule and (optionally) to *adjudicate* a borderline finding — both gated,
-both cached by `(rule, snippet)` so the same code always gets the same verdict.
+The everyday workflow runs forever with no API key. Claude is touched only to *author* a rule and (optionally) to *adjudicate* a borderline finding — both gated, both cached by `(rule, snippet)` so the same code always gets the same verdict.
 
 ## How it works
 
 ![RuleSmith architecture](diagram/ARCHITECTURE.svg)
 
-Deterministic primitives (`parse → cfg → dominance → escape`) compute the
-expensive-to-be-wrong facts. Two rule families ride them: **detective** rules
-(find bugs, CFG-driven) and **prescriptive** rules (conventions, AST + codemod).
-Claude only adjudicates the fuzzy residual.
+Deterministic primitives (`parse → cfg → dominance → escape`) compute the expensive-to-be-wrong facts. Two rule families ride them: **detective** rules (find bugs, CFG-driven) and **prescriptive** rules (conventions, AST + codemod). Claude only adjudicates the fuzzy residual.
 
 ```
 rulesmith/   the engine — parse, cfg (CFG+dominance), dataflow, report, cli, llm, authoring, judge
@@ -107,25 +92,19 @@ diagram/     architecture (excalidraw source + svg)
 ## What it catches
 
 114 rules across null-safety, resource lifecycle, concurrency & locking,
-immutability/purity, error handling, type design, security (weak crypto, hardcoded
-secrets, broken trust managers), complexity metrics, and naming. Highlights — the
-flow-sensitive ones no text rule can see:
+immutability/purity, error handling, type design, security (weak crypto, hardcoded secrets, broken trust managers), complexity metrics, and naming. Highlights — the flow-sensitive ones no text rule can see:
 
-`resource-leak` · `optional-get-without-ispresent` · `null-deref-needs-dominating-guard`
-· `builder-terminal-before-setters` (typestate) · `atomic-get-set-race` ·
-`pure-method-no-side-effects` · `guarded-by-lock-held` · `command-query-separation` ·
-`tell-dont-ask` · `blocking-call-while-holding-lock` · `lambda-captures-mutable-state`
+`resource-leak` · `optional-get-without-ispresent` · `null-deref-needs-dominating-guard` · `builder-terminal-before-setters` (typestate) · `atomic-get-set-race` · `pure-method-no-side-effects` · `guarded-by-lock-held` · `command-query-separation` · `tell-dont-ask` · `blocking-call-while-holding-lock` · `lambda-captures-mutable-state`
 
-See `examples/real-world/` for five unmodified backend-connectors files, each
-lighting up 13–15 rules.
+See `examples/real-world/` for five unmodified backend-connectors files, each lighting up 13–15 rules.
 
 ## Honest limits
 
 - Resource detection is name-based (no type resolution) → false positives like
-  `OffsetStorageReader`. `--judge` filters them via `claude -p`, cached.
+`OffsetStorageReader`. `--judge` filters them via `claude -p`, cached.
 - CFG exception edges are coarse (entry-level, not per-statement).
 - Autofix covers only `resource-leak`'s provably-safe subset; the other 113 rules
-  emit a `= help:` suggestion you apply yourself. The tool never AI-rewrites code.
+emit a `= help:` suggestion you apply yourself. The tool never AI-rewrites code.
 - Formatting reflow is delegated to google-java-format.
 
 ---

@@ -1,8 +1,6 @@
 # Walkthrough — the rules SonarQube doesn't run
 
-`examples/java/PaymentGateway.java` has five defects that standard linters miss —
-each needs typestate, purity, lock-state, or closure reasoning, not a syntax
-pattern. `examples/java-fixed/` is the same code repaired (lints clean).
+`examples/java/PaymentGateway.java` has five defects that standard linters miss — each needs typestate, purity, lock-state, or closure reasoning, not a syntax pattern. `examples/java-fixed/` is the same code repaired (lints clean).
 
 ```
 pip install -e .   # exposes the `rulesmith` command (or use: python -m rulesmith.cli)
@@ -36,11 +34,7 @@ $ rulesmith lint --rules $FIVE examples/java-fixed
 0 findings
 ```
 
-Setters before build(); field read under its lock; Future resolved outside the
-monitor; a genuinely pure method; a fold instead of a mutating closure. These are
-design-level fixes — exactly what a prose CLAUDE.md rule can describe but never
-enforce.
+Setters before build(); field read under its lock; Future resolved outside the monitor; a genuinely pure method; a fold instead of a mutating closure. These are design-level fixes — exactly what a prose CLAUDE.md rule can describe but never enforce.
 
 ## Want the differentiated checks on real code?
-See `examples/real-world/` and `demo/NOTES.md` — e.g. a genuine
-`atomic-get-set-race` (`textBB.set(textBB.get()==null?…)`) caught in production.
+See `examples/real-world/` and `demo/NOTES.md` — e.g. a genuine `atomic-get-set-race` (`textBB.set(textBB.get()==null?…)`) caught in production.
