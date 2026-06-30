@@ -50,7 +50,8 @@ pip install -e .                      # exposes the `rulesmith` command
 
 rulesmith list                        # the 114 installed rules
 rulesmith lint path/to/src            # exit 1 on findings (CI-ready)
-rulesmith lint --fix path/to/src      # deterministic try-with-resources rewrite
+rulesmith lint --fix path/to/src      # deterministic try-with-resources rewrite (resource-leak only)
+rulesmith lint --ai-fix path/to/src   # fix any finding in place via claude -p (parse-validated)
 rulesmith add "a switch over an enum must have a default case"
 ```
 

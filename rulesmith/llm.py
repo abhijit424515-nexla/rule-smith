@@ -8,8 +8,10 @@ import json
 import subprocess
 
 
-def complete(prompt, system=None, timeout=300):
+def complete(prompt, system=None, timeout=300, model=None):
     cmd = ["claude", "-p", prompt, "--output-format", "json"]
+    if model:
+        cmd += ["--model", model]
     if system:
         cmd += ["--append-system-prompt", system]
     r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)

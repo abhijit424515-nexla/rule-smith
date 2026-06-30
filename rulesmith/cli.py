@@ -66,58 +66,76 @@ def cmd_lint(args):
 
         _cache = judgemod.load_cache()
     total = 0
-    fixed = 0
-    skipped = 0
+    auto_fixed = 0
+    ai_fixed = 0
     for f in files:
         try:
             src = open(f, encoding="utf8", errors="replace").read()
         except OSError:
             continue
         rel = os.path.relpath(f)
-        if args.fix:
-            if args.rules and "resource-leak" not in args.rules:
+        # always analyze, so the finding count is honest regardless of --fix
+        findings = []
+        for name, mod in RULES.items():
+            if args.rules and name not in args.rules:
                 continue
-            edits, sk = resource_leak.fix_edits(src, rel)
-            skipped += sk
+            findings += mod.analyze_source(src, rel)
+        if args.judge and findings:
+            from rulesmith import judge as judgemod
+
+            kept = []
+            for fd in findings:
+                if not fd.get("judge"):
+                    kept.append(fd)
+                    continue
+                snip = judgemod.snippet_for(src, fd["line"])
+                v = judgemod.judge(fd, snip, _cache)
+                if v["real"]:
+                    fd["note"] = fd.get("note", "") + f" | judge: real ({v['reason']})"
+                    kept.append(fd)
+                else:
+                    filtered.append((rel, fd, v["reason"]))
+            findings = kept
+        total += len(findings)
+
+        # deterministic autofix (resource-leak only)
+        if args.fix and "resource-leak" in (args.rules or {"resource-leak"}):
+            edits, _ = resource_leak.fix_edits(src, rel)
             if edits:
-                new = resource_leak.apply_edits(src, edits)
+                src = resource_leak.apply_edits(src, edits)
                 if not args.dry_run:
-                    open(f, "w", encoding="utf8").write(new)
-                fixed += len(edits) // 2
+                    open(f, "w", encoding="utf8").write(src)
+                auto_fixed += len(edits) // 2
                 print(
                     f"{'would fix' if args.dry_run else 'fixed'} {rel}: "
                     f"{len(edits) // 2} resource(s) wrapped in try-with-resources"
                 )
-        else:
-            findings = []
-            for name, mod in RULES.items():
-                if args.rules and name not in args.rules:
-                    continue
-                findings += mod.analyze_source(src, rel)
-            if args.judge and findings:
-                from rulesmith import judge as judgemod
 
-                kept = []
-                for fd in findings:
-                    if not fd.get("judge"):
-                        kept.append(fd)
-                        continue
-                    snip = judgemod.snippet_for(src, fd["line"])
-                    v = judgemod.judge(fd, snip, _cache)
-                    if v["real"]:
-                        fd["note"] = (
-                            fd.get("note", "") + f" | judge: real ({v['reason']})"
-                        )
-                        kept.append(fd)
-                    else:
-                        filtered.append((rel, fd, v["reason"]))
-                findings = kept
-            total += len(findings)
+        # AI fix (any rule) via claude -p, parse-validated before writing
+        if args.ai_fix and findings:
+            from rulesmith import aifix
+
+            new_src, ok = aifix.ai_fix_file(src, findings, rel, model=args.model)
+            if ok and new_src != src:
+                if not args.dry_run:
+                    open(f, "w", encoding="utf8").write(new_src)
+                ai_fixed += 1
+                print(f"{'would ai-fix' if args.dry_run else 'ai-fixed'} {rel}")
+            elif not ok:
+                print(f"ai-fix skipped {rel}: reply did not parse, left unchanged")
+
+        if not (args.fix or args.ai_fix):
             for fd in findings:
                 print(format_finding(fd))
                 print()
-    if args.fix:
-        print(f"\n{fixed} auto-fixed, {skipped} need manual handling (suggest-only).")
+
+    if args.fix or args.ai_fix:
+        parts = [f"{total} finding(s)"]
+        if args.fix:
+            parts.append(f"{auto_fixed} auto-fixed")
+        if args.ai_fix:
+            parts.append(f"{ai_fixed} file(s) ai-fixed")
+        print("\n" + ", ".join(parts) + ".")
         return 0
     if args.judge:
         from rulesmith import judge as judgemod
@@ -138,7 +156,7 @@ def cmd_lint(args):
 def cmd_add(args):
     from rulesmith.authoring import add_rule
 
-    rid = add_rule(" ".join(args.description))
+    rid = add_rule(" ".join(args.description), model=args.model)
     return 0 if rid else 1
 
 
@@ -149,7 +167,17 @@ def main(argv=None):
     lp = sub.add_parser("lint", help="lint Java files/dirs")
     lp.add_argument("paths", nargs="+")
     lp.add_argument("--fix", action="store_true", help="apply safe autofixes")
-    lp.add_argument("--dry-run", action="store_true", help="with --fix: don't write")
+    lp.add_argument(
+        "--dry-run", action="store_true", help="with --fix/--ai-fix: do not write"
+    )
+    lp.add_argument(
+        "--ai-fix",
+        action="store_true",
+        help="fix findings in place via claude -p (parse-validated)",
+    )
+    lp.add_argument(
+        "--model", default=None, help="claude model for --ai-fix (e.g. opus, sonnet)"
+    )
     lp.add_argument(
         "--judge",
         action="store_true",
@@ -164,6 +192,9 @@ def main(argv=None):
     lp.set_defaults(fn=cmd_lint)
     ad = sub.add_parser("add", help="compile an English rule into a checked rule")
     ad.add_argument("description", nargs="+", help="the rule in plain English")
+    ad.add_argument(
+        "--model", default=None, help="claude model for codegen (e.g. opus, sonnet)"
+    )
     ad.set_defaults(fn=cmd_add)
     args = ap.parse_args(argv)
     return args.fn(args)

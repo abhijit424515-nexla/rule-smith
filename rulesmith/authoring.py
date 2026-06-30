@@ -99,7 +99,7 @@ def _verify(module_code, fixtures, tmp):
     return ok, rep
 
 
-def add_rule(english, max_attempts=2):
+def add_rule(english, max_attempts=2, model=None):
     import tempfile
 
     _fd, tmp = tempfile.mkstemp(prefix="rulesmith_gen_", suffix=".py")
@@ -114,7 +114,7 @@ def add_rule(english, max_attempts=2):
                 + "\nFix the module so every fixture matches its expected count. Output JSON only."
             )
         print(f"[attempt {attempt}] asking claude -p to compile the rule...")
-        reply = complete(prompt)
+        reply = complete(prompt, model=model)
         try:
             spec = extract_json(reply)
         except Exception as e:
