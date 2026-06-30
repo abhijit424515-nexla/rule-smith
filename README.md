@@ -125,6 +125,19 @@ diagram/     architecture (excalidraw source + svg)
 - `--fix` results are cached at `/tmp/rulesmith.cache` keyed on (rules, file content, model); editing the file auto-invalidates, or pass `--refresh-cache`.
 - Formatting reflow is delegated to google-java-format.
 
+
+## The interesting part: where this can go
+
+Today's 114 rules barely scratch what the substrate allows. Once you have a CFG, dominance, a call graph, and def-use chains, a whole class of properties stops being a "hard AI problem" and becomes a *graph query* — decidable, reproducible, fast. Every powerful rule has the same shape: **a question about paths, not about text.**
+
+- *Typestate* — "open before read", "lock before touch", "no use after close": reachability over the CFG.
+- *Must-before / must-after* — dominance and post-dominance give you init-before-use, validate-before-trust, acquire-before-release from two graph relations.
+- *Taint* — "does untrusted input reach a sink unsanitized?" is a path search: SQLi, traversal, secret-to-network, same traversal.
+- *Effect & purity* — the call graph already knows what a method transitively touches: "pure stays pure", "no I/O under this lock".
+- *Concurrency* — lock-state is a dataflow fact; out fall guarded-access, lock-ordering, check-then-act races.
+
+The honest limits above are *engineering* gaps (heuristics, coarse exception edges), not *theoretical* ones — the ceiling isn't the analysis, it's how many English sentences you bother to compile. That's the bet: **the hard part was never inventing the check, it was knowing which to write.** RuleSmith makes that a sentence; the graph does the rest.
+
 ---
 
 *Built on tree-sitter + CFG/dominance + `claude -p`. One CLI, no API key.*
